@@ -2,45 +2,37 @@
 
 namespace App\Entities;
 
-use DateTime;
-use Doctrine\ORM\Mapping\Column;
-use Doctrine\ORM\Mapping\Entity;
-use Doctrine\ORM\Mapping\GeneratedValue;
-use Doctrine\ORM\Mapping\Id;
-use Doctrine\ORM\Mapping\JoinColumn;
-use Doctrine\ORM\Mapping\ManyToOne;
-use Doctrine\ORM\Mapping\Table;
+use Doctrine\ORM\Mapping as ORM;
 
-#[Entity, Table(name: 'product_production_stages')]
-final class ProductProductionStage
+#[ORM\Entity]
+#[ORM\Table(name: 'product_production_stages')]
+class ProductProductionStage
 {
-    #[Id, Column(type: 'integer'), GeneratedValue(strategy: 'IDENTITY')]
-    private $id;
+    #[ORM\Id]
+    #[ORM\GeneratedValue(strategy: 'IDENTITY')]
+    #[ORM\Column(type: 'integer')]
+    private ?int $id = null;
 
-    #[ManyToOne(targetEntity: ProductPart::class)]
-    #[JoinColumn(name: 'product_part_id', referencedColumnName: 'id', onDelete: 'CASCADE')]
-    private $productPart;
+    #[ORM\Column(type: 'integer')]
+    private int $stage;
 
-    #[ManyToOne(targetEntity: OperationType::class)]
-    #[JoinColumn(name: 'operation_type_id', referencedColumnName: 'id', onDelete: 'CASCADE')]
-    private $operationType;
+    #[ORM\Column(type: 'datetime')]
+    private \DateTime $created;
 
-    #[Column(type: 'integer', nullable: false)]
-    private $stage;
+    #[ORM\ManyToOne(targetEntity: ProductPart::class)]
+    #[ORM\JoinColumn(name: 'product_part_id', referencedColumnName: 'id', nullable: false, onDelete: 'CASCADE')]
+    private ProductPart $productPart;
 
-    #[Column(type: 'datetime', nullable: false)]
-    private $created;
+    #[ORM\ManyToOne(targetEntity: OperationType::class)]
+    #[ORM\JoinColumn(name: 'operation_type_id', referencedColumnName: 'id', nullable: false, onDelete: 'CASCADE')]
+    private OperationType $operationType;
 
-    #[Column(name: '`order`', type: 'integer', nullable: false)]
-    private $order;
-
-    public function __construct(ProductPart $productPart, OperationType $operationType, int $stage, int $order)
+    public function __construct(ProductPart $productPart, OperationType $operationType, int $stage)
     {
         $this->productPart = $productPart;
         $this->operationType = $operationType;
         $this->stage = $stage;
-        $this->order = $order;
-        $this->created = new DateTime();
+        $this->created = new \DateTime();
     }
 
     public function toArray(): array
@@ -49,15 +41,40 @@ final class ProductProductionStage
             'id' => $this->getId(),
             'product_part_id' => $this->getProductPart()->getId(),
             'operation_type_id' => $this->getOperationType()->getId(),
+            'operation_type' => [
+                'name' => $this->getOperationType()->getName(),
+                'machine' => $this->getOperationType()->getMachine()
+            ],
             'stage' => $this->getStage(),
-            'created' => $this->getCreated()->format('Y-m-d H:i:s'),
-            'order' => $this->getOrder()
+            'created' => $this->getCreated()->format('Y-m-d H:i:s')
         ];
     }
 
     public function getId(): ?int
     {
         return $this->id;
+    }
+
+    public function getStage(): int
+    {
+        return $this->stage;
+    }
+
+    public function setStage(int $stage): self
+    {
+        $this->stage = $stage;
+        return $this;
+    }
+
+    public function getCreated(): \DateTime
+    {
+        return $this->created;
+    }
+
+    public function setCreated(\DateTime $created): self
+    {
+        $this->created = $created;
+        return $this;
     }
 
     public function getProductPart(): ProductPart
@@ -81,31 +98,4 @@ final class ProductProductionStage
         $this->operationType = $operationType;
         return $this;
     }
-
-    public function getStage(): int
-    {
-        return $this->stage;
-    }
-
-    public function setStage(int $stage): self
-    {
-        $this->stage = $stage;
-        return $this;
-    }
-
-    public function getCreated(): DateTime
-    {
-        return $this->created;
-    }
-
-    public function getOrder(): int
-    {
-        return $this->order;
-    }
-
-    public function setOrder(int $order): self
-    {
-        $this->order = $order;
-        return $this;
-    }
-} 
+}

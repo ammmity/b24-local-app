@@ -9,7 +9,7 @@ use Doctrine\ORM\Mapping\Id;
 use Doctrine\ORM\Mapping\Table;
 
 #[Entity, Table(name: 'product_operation_types')]
-final class OperationType
+class OperationType
 {
     #[Id, Column(type: 'integer'), GeneratedValue(strategy: 'AUTO')]
     private $id;

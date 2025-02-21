@@ -23,7 +23,7 @@
             size="small"
             @click="openProductionModal(row.id)"
           >
-          Настройка производства
+          Этапы производства
           </el-button>
         </template>
       </el-table-column>
@@ -36,7 +36,7 @@
     <!-- Модальное окно -->
     <el-dialog
       v-model="showProductionModal"
-      title="Настройка производства"
+      title="Настройка этапов производства"
       width="70%"
       destroy-on-close
     >
@@ -51,7 +51,7 @@
 <script>
 import {defineComponent, inject, onMounted, ref} from 'vue';
 import apiClient from '../../api';
-import ProductProduction from './ProductProduction.vue';
+import ProductProduction from '../ProductProduction.vue';
 
 export default defineComponent({
   name: 'Details',

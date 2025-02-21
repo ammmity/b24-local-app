@@ -21,7 +21,7 @@
       style="width: 100%; margin-top: 20px;"
     >
       <el-table-column prop="id" label="ID" width="80" />
-      <el-table-column prop="name" label="Название" />
+      <el-table-column prop="name" label="Операция" />
       <el-table-column prop="machine" label="Рабочее место" />
       <el-table-column label="Действия" width="150">
         <template #default="{ row }">
@@ -48,7 +48,7 @@
         :rules="formRules"
         label-width="120px"
       >
-        <el-form-item label="Название" prop="name">
+        <el-form-item label="Операция" prop="name">
           <el-input v-model="createForm.name" />
         </el-form-item>
 

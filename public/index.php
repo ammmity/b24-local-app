@@ -27,6 +27,8 @@ use App\Controllers\{
 };
 use Doctrine\ORM\ORMSetup;
 use Doctrine\ORM\EntityManager;
+use Doctrine\ORM\Tools\Setup;
+use Doctrine\ORM\Mapping\Driver\AttributeDriver;
 
 require __DIR__ . '/../vendor/autoload.php';
 
@@ -52,9 +54,17 @@ $container = new DI\Container([
     EntityManagerInterface::class => DI\factory(function (Connection $connection) {
         static $instance = null;
         if ($instance === null) {
-            $isDevMode = false;
-            $entityPaths = [__DIR__ . "/../src/Entities"];
-            $config = ORMSetup::createAttributeMetadataConfiguration($entityPaths, $isDevMode);
+            $paths = [__DIR__ . '/../src/Entities'];
+            $isDevMode = true;
+            $config = ORMSetup::createAttributeMetadataConfiguration(
+                paths: $paths,
+                isDevMode: $isDevMode,
+                proxyDir: null,
+                cache: null
+            );
+            $driver = new AttributeDriver($paths);
+            $config->setMetadataDriverImpl($driver);
+            $config->setAutoGenerateProxyClasses(false);
             $instance = new EntityManager($connection, $config);
         }
         return $instance;
@@ -98,9 +108,9 @@ $app->group('/api/', function (RouteCollectorProxy $group) {
 
     $group->get('product-operation-stages', [ProductProductionStagesController::class, 'list'])->setName('product-operation-stages-list');
     $group->get('product-operation-stages/{id}', [ProductProductionStagesController::class, 'get'])->setName('product-operation-stages-resource');
-    $group->post('product-operation-stages', [ProductProductionStagesController::class, 'create'])->setName('add-product-operation-stages');
+    $group->post('product-operation-stages', [ProductProductionStagesController::class, 'store'])->setName('add-product-operation-stages');
     $group->patch('product-operation-stages/{id}', [ProductProductionStagesController::class, 'update'])->setName('update-product-operation-stages');
-    $group->delete('product-operation-stages/{id}', [ProductProductionStagesController::class, 'remove'])->setName('delete-product-operation-stages');
+    $group->delete('product-operation-stages/{id}', [ProductProductionStagesController::class, 'delete'])->setName('delete-product-operation-stages');
     $group->patch('product-operation-stages/reorder/', [ProductProductionStagesController::class, 'reorder'])->setName('reorder-product-operation-stages');
 });
 
