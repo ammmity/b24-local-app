@@ -60,8 +60,11 @@ $container = new DI\Container([
 ]);
 AppFactory::setContainer($container);
 
-$app = AppFactory::create();
+$b24Settings = $container->get(SettingsInterface::class)->get('b24');
+define('C_REST_CLIENT_ID', $b24Settings['appId']);
+define('C_REST_CLIENT_SECRET', $b24Settings['appKey']);
 
+$app = AppFactory::create();
 $twig = Twig::create(__DIR__ . '/../resources/templates', ['cache' => false]);//__DIR__ . '/../templatesCache'
 $app->add(TwigMiddleware::create($app, $twig));
 $app->add(JsonResponseMiddleware::class);

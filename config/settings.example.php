@@ -8,5 +8,9 @@ return [
         'host' => '',
         'driver' => '',
         'port' => '',
+    ],
+    'b24' => [
+        'appId' => '',
+        'appKey' => ''
     ]
 ];
