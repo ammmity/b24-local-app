@@ -22,7 +22,8 @@ use App\Controllers\{
     UsersController,
     ProductPartsController,
     DealsController,
-    OperationTypesController
+    OperationTypesController,
+    ProductProductionStagesController
 };
 use Doctrine\ORM\ORMSetup;
 use Doctrine\ORM\EntityManager;
@@ -90,9 +91,17 @@ $app->group('/api/', function (RouteCollectorProxy $group) {
     $group->any('products/import/', [ProductPartsController::class, 'import'])->setName('import-products-from-b24');
 
     $group->get('operation-types', [OperationTypesController::class, 'list'])->setName('operation-types-list');
-//    $group->get('operation-types/{id}', [UsersController::class, 'get'])->setName('operation-type-resource');
-//    $group->post('operation-types', [UsersController::class, 'create'])->setName('add-operation-type');
-//    $group->patch('operation-types/{id}', [UsersController::class, 'remove'])->setName('update-operation-type');
+    $group->get('operation-types/{id}', [OperationTypesController::class, 'get'])->setName('operation-type-resource');
+    $group->post('operation-types', [OperationTypesController::class, 'create'])->setName('add-operation-type');
+    $group->patch('operation-types/{id}', [OperationTypesController::class, 'update'])->setName('update-operation-type');
+    $group->delete('operation-types/{id}', [OperationTypesController::class, 'remove'])->setName('delete-operation-type');
+
+    $group->get('product-operation-stages', [ProductProductionStagesController::class, 'list'])->setName('product-operation-stages-list');
+    $group->get('product-operation-stages/{id}', [ProductProductionStagesController::class, 'get'])->setName('product-operation-stages-resource');
+    $group->post('product-operation-stages', [ProductProductionStagesController::class, 'create'])->setName('add-product-operation-stages');
+    $group->patch('product-operation-stages/{id}', [ProductProductionStagesController::class, 'update'])->setName('update-product-operation-stages');
+    $group->delete('product-operation-stages/{id}', [ProductProductionStagesController::class, 'remove'])->setName('delete-product-operation-stages');
+    $group->patch('product-operation-stages/reorder/', [ProductProductionStagesController::class, 'reorder'])->setName('reorder-product-operation-stages');
 });
 
 
