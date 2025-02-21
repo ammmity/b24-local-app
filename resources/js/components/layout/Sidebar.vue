@@ -9,6 +9,11 @@
       <template #title>Главная</template>
     </el-menu-item>
 
+    <el-menu-item index="/app/details/" @click="$router.push('/app/details/')">
+      <el-icon><Tickets /></el-icon>
+      <template #title>Комплектующие</template>
+    </el-menu-item>
+
     <el-menu-item index="/app/deal/" @click="$router.push('/app/deal/')">
       <el-icon><Tickets /></el-icon>
       <template #title>Сделка</template>
