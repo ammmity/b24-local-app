@@ -20,6 +20,12 @@ final class OperationType
     #[Column(type: 'string', unique: true, nullable: false)]
     private $machine;
 
+    public function __construct(string $name, string $machine)
+    {
+        $this->setName($name);
+        $this->setMachine($machine);
+    }
+
     public function toArray(): array
     {
         return [
