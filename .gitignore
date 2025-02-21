@@ -10,6 +10,7 @@
 /public/build
 /public/dist
 /logs
+/src/CRest/logs/
 
 # Environment files
 .env
