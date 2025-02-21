@@ -19,11 +19,11 @@ final class ProductDevelopmentScheme extends AbstractMigration
      */
     public function change(): void
     {
-        $stagesTable = $this->table('product_operation_types');
-        $stagesTable
-            ->addColumn('name', 'string')
-            ->addColumn('machine', 'string')
-            ->create();
+//        $stagesTable = $this->table('product_operation_types');
+//        $stagesTable
+//            ->addColumn('name', 'string')
+//            ->addColumn('machine', 'string')
+//            ->create();
 
 //        $productPartsTable = $this->table('product_parts');
 //        $productPartsTable
@@ -32,15 +32,15 @@ final class ProductDevelopmentScheme extends AbstractMigration
 //            ->addColumn('bitrix_id', 'integer')
 //            ->create();
 
-        $productProductionStages = $this->table('product_production_stages');
-        $productProductionStages
-            ->addColumn('product_part_id', 'integer')
-            ->addColumn('operation_type_id', 'integer')
-            ->addColumn('stage', 'integer')
-            ->addColumn('created', 'datetime')
-            ->addForeignKey('operation_type_id', 'product_operation_types', 'id', ['delete' => 'CASCADE', 'update' => 'CASCADE'])
-            ->addForeignKey('product_part_id', 'product_parts', 'id', ['delete' => 'CASCADE', 'update' => 'CASCADE'])
-            ->create();
+//        $productProductionStages = $this->table('product_production_stages');
+//        $productProductionStages
+//            ->addColumn('product_part_id', 'integer')
+//            ->addColumn('operation_type_id', 'integer')
+//            ->addColumn('stage', 'integer')
+//            ->addColumn('created', 'datetime')
+//            ->addForeignKey('operation_type_id', 'product_operation_types', 'id', ['delete' => 'CASCADE', 'update' => 'CASCADE'])
+//            ->addForeignKey('product_part_id', 'product_parts', 'id', ['delete' => 'CASCADE', 'update' => 'CASCADE'])
+//            ->create();
 
         $productOperationTypes = [
             [
@@ -99,7 +99,5 @@ final class ProductDevelopmentScheme extends AbstractMigration
      */
     public function down()
     {
-        $this->table('product_production_stages')->drop();
-        $this->table('product_operation_types')->drop();
     }
 }
