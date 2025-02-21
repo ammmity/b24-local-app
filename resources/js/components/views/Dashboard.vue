@@ -1,9 +1,5 @@
 <template>
   <div>
-    <h1>Главная</h1>
-
-    <router-link to="/app/settings/">Настройки</router-link>
-
     <el-input
       v-model="searchQuery"
       placeholder="Поиск продуктов"
