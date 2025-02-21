@@ -4,9 +4,6 @@ namespace App\CRest;
 
 use Slim\Psr7\Request;
 
-define('C_REST_CLIENT_ID','local.67b0fabc23c5a0.93561776');//Application ID
-define('C_REST_CLIENT_SECRET','yn2c50gLTpqfdLq4wGsLxrWYajNJcA646fazDPCcGl6WlfKkO8');//Application key
-
 /**
  * @version 1.36
  *  define:

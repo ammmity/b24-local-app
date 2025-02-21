@@ -10,6 +10,7 @@
 /public/build
 /public/dist
 /logs
+/src/CRest/logs/
 
 # Environment files
 .env
@@ -19,6 +20,7 @@
 phinx.php
 /config/settings.php
 /phinx.php
+/src/CRest/settings.json
 
 # IDE files
 .idea/
@@ -60,3 +62,6 @@ yarn.lock
 # Testing
 /coverage
 .phpunit.cache
+
+#Other
+./Dockerfile

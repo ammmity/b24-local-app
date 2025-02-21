@@ -1,24 +1,47 @@
 import { createRouter, createWebHistory } from 'vue-router';
-import Dashboard from './components/views/Dashboard.vue'; // Импортируйте ваши компоненты
-import Deal from './components/views/Deal.vue'; // Импортируйте ваши компоненты
-import Settings from './components/views/Settings.vue'; // Импортируйте ваши компоненты
+import AppLayout from './components/layout/AppLayout.vue';
+import Dashboard from './components/views/Dashboard.vue';
+import Deal from './components/views/Deal.vue';
+import Settings from './components/views/Settings.vue';
+// import ProductProduction from './components/views/ProductProduction.vue';
 
 const routes = [
     {
-        path: '/app/',
-        name: 'Dashboard',
-        component: Dashboard,
-    },
-    {
-        path: '/app/deal/',
-        name: 'Deal',
-        component: Deal,
-    },
-    {
-        path: '/app/settings/',
-        name: 'Settings',
-        component: Settings,
-    },
+        path: '/app',
+        component: AppLayout,
+        children: [
+            {
+                path: '',
+                name: 'Dashboard',
+                component: Dashboard,
+            },
+            {
+                path: 'details',
+                name: 'Details',
+                component: () => import('./components/views/Details.vue')
+            },
+            {
+                path: 'deal',
+                name: 'Deal',
+                component: Deal,
+            },
+            {
+                path: 'settings',
+                name: 'Settings',
+                component: Settings,
+            },
+            {
+                path: 'operation-types',
+                name: 'OperationTypes',
+                component: () => import('./components/views/OpertaionTypes.vue')
+            },
+            {
+                path: 'product-production/:id',
+                name: 'ProductProduction',
+                component: () => import('./components/views/ProductProduction.vue')
+            },
+        ]
+    }
 ];
 
 const router = createRouter({

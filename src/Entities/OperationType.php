@@ -8,32 +8,32 @@ use Doctrine\ORM\Mapping\GeneratedValue;
 use Doctrine\ORM\Mapping\Id;
 use Doctrine\ORM\Mapping\Table;
 
-#[Entity, Table(name: 'product_parts')]
-class ProductPart
+#[Entity, Table(name: 'product_operation_types')]
+class OperationType
 {
     #[Id, Column(type: 'integer'), GeneratedValue(strategy: 'AUTO')]
     private $id;
 
-    #[Column(type: 'string', unique: false, nullable: false)]
+    #[Column(type: 'string', unique: true, nullable: false)]
     private $name;
 
     #[Column(type: 'string', unique: true, nullable: false)]
-    private $xml_id;
+    private $machine;
 
-    #[Column(type: 'integer', unique: false, nullable: false)]
-    private $bitrix_id;
+    public function __construct(string $name, string $machine)
+    {
+        $this->setName($name);
+        $this->setMachine($machine);
+    }
 
     public function toArray(): array
     {
         return [
             'id' => $this->getId(),
             'name' => $this->getName(),
-            'xml_id' => $this->getXmlId(),
-            'bitrix_id' => $this->getBitrixId(),
+            'machine' => $this->getMachine(),
         ];
     }
-
-    // Геттеры и сеттеры
 
     public function getId(): ?int
     {
@@ -51,25 +51,14 @@ class ProductPart
         return $this;
     }
 
-    public function getXmlId(): ?string
+    public function getMachine(): ?string
     {
-        return $this->xml_id;
+        return $this->machine;
     }
 
-    public function setXmlId(string $xml_id): self
+    public function setMachine(string $machine): self
     {
-        $this->xml_id = $xml_id;
-        return $this;
-    }
-
-    public function getBitrixId(): ?int
-    {
-        return $this->bitrix_id;
-    }
-
-    public function setBitrixId(int $bitrix_id): self
-    {
-        $this->bitrix_id = $bitrix_id;
+        $this->machine = $machine;
         return $this;
     }
 }

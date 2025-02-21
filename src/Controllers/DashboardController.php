@@ -1,15 +1,13 @@
 <?php
 namespace App\Controllers;
 
-use App\CRest\CRest;
+use App\Entities\ProductPart;
 use App\Services\CRestService;
-use App\Settings\Settings;
-use App\Settings\SettingsInterface;
-use Psr\Container\ContainerInterface;
+use Doctrine\ORM\EntityManager;
+use Doctrine\ORM\EntityManagerInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Slim\Views\Twig;
-use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Twig\Error\LoaderError;
 use Twig\Error\RuntimeError;
 use Twig\Error\SyntaxError;
@@ -19,7 +17,8 @@ class DashboardController {
      * @throws \Exception
      */
     public function __construct(
-        protected CRestService $CRestService
+        protected CRestService $CRestService,
+        protected EntityManagerInterface $entityManager
     )
     {}
 
@@ -30,39 +29,39 @@ class DashboardController {
      */
     public function dashboard(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
     {
-        if (empty($args['find'])) {
-            $args['find'] = 'teh';
-        }
 
-        $filter = [];
-        if (!empty($args['find'])) {
-            $filter['FIND'] = "%{$args['find']}%";
-        }
+
+//
+//        if (empty($args['find'])) {
+//            $args['find'] = 'teh';
+//        }
+//
+//        $filter = [];
+//        if (!empty($args['find'])) {
+//            $filter['FIND'] = "%{$args['find']}%";
+//        }
 
 //        if (empty($filter)) {
 //            // return error
 //        }
 
+//
+//        $users = $this->CRestService->callMethod('user.search',
+//            [
+//                'filter' => $filter
+//            ]
+//        )['result'];
+//
+//        if (!empty($users)) {
+//            $users = array_map(fn($user) => [
+//                'id' => $user['ID'],
+//                'name' => $user['NAME'],
+//                'last_name' => $user['LAST_NAME']
+//            ], $users);
+//        }
 
-        $users = $this->CRestService->callMethod('user.search',
-            [
-                'filter' => $filter
-            ]
-        )['result'];
-
-        if (!empty($users)) {
-            $users = array_map(fn($user) => [
-                'id' => $user['ID'],
-                'name' => $user['NAME'],
-                'last_name' => $user['LAST_NAME']
-            ], $users);
-        }
-
-
-        $response->getBody()->write('<pre>' . print_r($users, true) . '</pre>');
-        return $response;
         $view = Twig::fromRequest($request);
-        return $view->render($response, 'dashboard.html.twig');
+        return $view->render($response, 'app.html.twig');
     }
 
     public function deal(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
@@ -88,7 +87,7 @@ class DashboardController {
 //        return $response;
 
         $view = Twig::fromRequest($request);
-        return $view->render($response, 'deal-detail.html.twig', [
+        return $view->render($response, 'deal.html.twig', [
             'deal' => $deal
         ]);
     }

@@ -1,10 +1,12 @@
 <template>
   <div>
-    <el-input
-      v-model="searchQuery"
-      placeholder="Поиск продуктов"
-      @input="debouncedSearch"
-    />
+    <div class="header-actions">
+      <el-input
+        v-model="searchQuery"
+        placeholder="Поиск комплектующих"
+        @input="debouncedSearch"
+      />
+    </div>
 
     <el-table
       v-if="productParts"
@@ -14,14 +16,14 @@
       <el-table-column prop="id" label="ID" width="80" />
       <el-table-column prop="name" label="Название" />
       <el-table-column prop="bitrix_id" label="Артикул" width="120" />
-      <el-table-column label="Действия" width="150">
+      <el-table-column label="Действия" width="200">
         <template #default="{ row }">
           <el-button
             type="primary"
             size="small"
             @click="openProductionModal(row.id)"
           >
-            Производство
+          Этапы производства
           </el-button>
         </template>
       </el-table-column>
@@ -31,10 +33,10 @@
       {{ error }}
     </div>
 
-    <!-- Добавляем модальное окно -->
+    <!-- Модальное окно -->
     <el-dialog
       v-model="showProductionModal"
-      title="Производство продукта"
+      title="Настройка этапов производства"
       width="70%"
       destroy-on-close
     >
@@ -49,16 +51,14 @@
 <script>
 import {defineComponent, inject, onMounted, ref} from 'vue';
 import apiClient from '../../api';
-import { ElButton } from 'element-plus'
-import ProductProduction from './ProductProduction.vue';
+import ProductProduction from '../ProductProduction.vue';
 
 export default defineComponent({
-  name: 'Home',
+  name: 'Details',
   components: {
     ProductProduction
   },
   setup() {
-    // Получение переменной из provide
     const dealId = inject('dealId');
     const productParts = ref(null);
     const error = ref(null);
@@ -70,7 +70,6 @@ export default defineComponent({
       try {
         const response = await apiClient.get('/products');
         productParts.value = response.data;
-        window.console.log(productParts.value);
       } catch (err) {
         error.value = 'Ошибка при получении данных: ' + err.message;
       }
@@ -96,7 +95,7 @@ export default defineComponent({
       }
       searchTimeout.value = setTimeout(() => {
         searchProductParts();
-      }, 300); // Задержка 300мс
+      }, 300);
     };
 
     const openProductionModal = (id) => {
@@ -106,15 +105,35 @@ export default defineComponent({
 
     const handleProductionSuccess = () => {
       showProductionModal.value = false;
-      fetchProductParts(); // Обновляем список после успешного создания
+      fetchProductParts();
     };
 
-    onMounted(fetchProductParts); // Вызываем fetchData при монтировании компонента
-    // Возвращаем переменную для использования в шаблоне
-    return { dealId, productParts, searchQuery, debouncedSearch, showProductionModal, selectedProductId, openProductionModal, handleProductionSuccess };
+    onMounted(fetchProductParts);
+
+    return {
+      dealId,
+      productParts,
+      searchQuery,
+      debouncedSearch,
+      showProductionModal,
+      selectedProductId,
+      openProductionModal,
+      handleProductionSuccess,
+      error
+    };
   }
 });
 </script>
 
 <style scoped>
-</style>
+.header-actions {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.error-message {
+  color: red;
+  margin-top: 10px;
+}
+</style> 

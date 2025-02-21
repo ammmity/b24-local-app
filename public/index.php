@@ -21,10 +21,14 @@ use App\Controllers\{
     InstallB24AppController,
     UsersController,
     ProductPartsController,
-    DealsController
+    DealsController,
+    OperationTypesController,
+    ProductProductionStagesController
 };
 use Doctrine\ORM\ORMSetup;
 use Doctrine\ORM\EntityManager;
+use Doctrine\ORM\Tools\Setup;
+use Doctrine\ORM\Mapping\Driver\AttributeDriver;
 
 require __DIR__ . '/../vendor/autoload.php';
 
@@ -50,9 +54,17 @@ $container = new DI\Container([
     EntityManagerInterface::class => DI\factory(function (Connection $connection) {
         static $instance = null;
         if ($instance === null) {
-            $isDevMode = false;
-            $entityPaths = [__DIR__ . "/../src/Entities"];
-            $config = ORMSetup::createAttributeMetadataConfiguration($entityPaths, $isDevMode);
+            $paths = [__DIR__ . '/../src/Entities'];
+            $isDevMode = true;
+            $config = ORMSetup::createAttributeMetadataConfiguration(
+                paths: $paths,
+                isDevMode: $isDevMode,
+                proxyDir: null,
+                cache: null
+            );
+            $driver = new AttributeDriver($paths);
+            $config->setMetadataDriverImpl($driver);
+            $config->setAutoGenerateProxyClasses(false);
             $instance = new EntityManager($connection, $config);
         }
         return $instance;
@@ -60,8 +72,11 @@ $container = new DI\Container([
 ]);
 AppFactory::setContainer($container);
 
-$app = AppFactory::create();
+$b24Settings = $container->get(SettingsInterface::class)->get('b24');
+define('C_REST_CLIENT_ID', $b24Settings['appId']);
+define('C_REST_CLIENT_SECRET', $b24Settings['appKey']);
 
+$app = AppFactory::create();
 $twig = Twig::create(__DIR__ . '/../resources/templates', ['cache' => false]);//__DIR__ . '/../templatesCache'
 $app->add(TwigMiddleware::create($app, $twig));
 $app->add(JsonResponseMiddleware::class);
@@ -85,6 +100,18 @@ $app->group('/api/', function (RouteCollectorProxy $group) {
     $group->any('products/{id}', [ProductPartsController::class, 'get'])->setName('product-resource');
     $group->any('products/import/', [ProductPartsController::class, 'import'])->setName('import-products-from-b24');
 
+    $group->get('operation-types', [OperationTypesController::class, 'list'])->setName('operation-types-list');
+    $group->get('operation-types/{id}', [OperationTypesController::class, 'get'])->setName('operation-type-resource');
+    $group->post('operation-types', [OperationTypesController::class, 'create'])->setName('add-operation-type');
+    $group->patch('operation-types/{id}', [OperationTypesController::class, 'update'])->setName('update-operation-type');
+    $group->delete('operation-types/{id}', [OperationTypesController::class, 'remove'])->setName('delete-operation-type');
+
+    $group->get('product-operation-stages', [ProductProductionStagesController::class, 'list'])->setName('product-operation-stages-list');
+    $group->get('product-operation-stages/{id}', [ProductProductionStagesController::class, 'get'])->setName('product-operation-stages-resource');
+    $group->post('product-operation-stages', [ProductProductionStagesController::class, 'store'])->setName('add-product-operation-stages');
+    $group->patch('product-operation-stages/{id}', [ProductProductionStagesController::class, 'update'])->setName('update-product-operation-stages');
+    $group->delete('product-operation-stages/{id}', [ProductProductionStagesController::class, 'delete'])->setName('delete-product-operation-stages');
+    $group->patch('product-operation-stages/reorder/', [ProductProductionStagesController::class, 'reorder'])->setName('reorder-product-operation-stages');
 });
 
 

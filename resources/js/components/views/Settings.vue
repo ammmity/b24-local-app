@@ -1,7 +1,5 @@
 <template>
   <div>
-    <h1>Настройки</h1>
-    <router-link to="/app/">Главная</router-link>
   </div>
 </template>
 
@@ -14,8 +12,4 @@ export default defineComponent({
 </script>
 
 <style scoped>
-/* Ваши стили для компонента Home */
-h1 {
-  color: #42b983;
-}
 </style>

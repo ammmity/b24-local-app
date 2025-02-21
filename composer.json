@@ -12,12 +12,7 @@
         "slim/twig-view": "^3.4",
         "php-di/php-di": "^7.0",
         "robmorgan/phinx": "^0.16.6",
-        "doctrine/orm": "^3.3",
-        "symfony/cache": "^7.2",
-        "doctrine/migrations": "^3.8"
-    },
-    "minimum-stability": "stable",
-    "require-dev": {
-        "symfony/maker-bundle": "^1.62"
+        "doctrine/orm": "3.0",
+        "symfony/cache": "^5.4"
     }
 }

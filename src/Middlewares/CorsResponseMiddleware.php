@@ -12,6 +12,7 @@ class CorsResponseMiddleware
     {
         $response = $handler->handle($request);
         $response = $response->withHeader('Access-Control-Allow-Origin', '*');
+        $response = $response->withHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
         return $response;
     }
 }
