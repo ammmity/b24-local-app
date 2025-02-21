@@ -7,5 +7,6 @@ return [
         'password' => '',
         'host' => '',
         'driver' => '',
+        'port' => '',
     ]
 ];
