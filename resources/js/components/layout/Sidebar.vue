@@ -6,17 +6,22 @@
   >
     <el-menu-item index="/app/" @click="$router.push('/app/')">
       <el-icon><DataLine /></el-icon>
-      <template #title>Dashboard</template>
+      <template #title>Главная</template>
     </el-menu-item>
 
     <el-menu-item index="/app/deal/" @click="$router.push('/app/deal/')">
       <el-icon><Tickets /></el-icon>
-      <template #title>Deal</template>
+      <template #title>Сделка</template>
+    </el-menu-item>
+
+    <el-menu-item index="/app/operation-types/" @click="$router.push('/app/operation-types/')">
+      <el-icon><Setting /></el-icon>
+      <template #title>Типы операций</template>
     </el-menu-item>
 
     <el-menu-item index="/app/settings/" @click="$router.push('/app/settings/')">
       <el-icon><Setting /></el-icon>
-      <template #title>Settings</template>
+      <template #title>Настройки</template>
     </el-menu-item>
   </el-menu>
 </template>
@@ -60,4 +65,4 @@ export default defineComponent({
 .sidebar-menu:not(.el-menu--collapse) {
   width: 250px;
 }
-</style> 
+</style>

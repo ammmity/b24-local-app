@@ -26,6 +26,11 @@ const routes = [
                 component: Settings,
             },
             {
+                path: 'operation-types',
+                name: 'OperationTypes',
+                component: () => import('./components/views/OpertaionTypes.vue')
+            },
+            {
                 path: 'product-production/:id',
                 name: 'ProductProduction',
                 component: () => import('./components/views/ProductProduction.vue')

@@ -1,7 +1,5 @@
 <template>
   <div class="product-production">
-    <h2>Производство продукта</h2>
-
     <el-form
       ref="formRef"
       :model="form"
@@ -10,8 +8,8 @@
       class="production-form"
     >
       <el-form-item label="Продукт" prop="product_id">
-        <el-select 
-          v-model="form.product_id" 
+        <el-select
+          v-model="form.product_id"
           placeholder="Выберите продукт"
           filterable
         >
@@ -25,8 +23,8 @@
       </el-form-item>
 
       <el-form-item label="Количество" prop="quantity">
-        <el-input-number 
-          v-model="form.quantity" 
+        <el-input-number
+          v-model="form.quantity"
           :min="1"
           controls-position="right"
         />
@@ -108,7 +106,7 @@ export default defineComponent({
 
     const submitForm = async () => {
       if (!formRef.value) return;
-      
+
       await formRef.value.validate(async (valid) => {
         if (valid) {
           try {
@@ -145,9 +143,7 @@ export default defineComponent({
 
 <style scoped>
 .product-production {
-  max-width: 800px;
-  margin: 20px auto;
-  padding: 20px;
+
 }
 
 .production-form {
@@ -157,4 +153,4 @@ export default defineComponent({
   border-radius: 4px;
   box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
 }
-</style> 
+</style>

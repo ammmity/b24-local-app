@@ -21,7 +21,8 @@ use App\Controllers\{
     InstallB24AppController,
     UsersController,
     ProductPartsController,
-    DealsController
+    DealsController,
+    OperationTypesController
 };
 use Doctrine\ORM\ORMSetup;
 use Doctrine\ORM\EntityManager;
@@ -88,6 +89,10 @@ $app->group('/api/', function (RouteCollectorProxy $group) {
     $group->any('products/{id}', [ProductPartsController::class, 'get'])->setName('product-resource');
     $group->any('products/import/', [ProductPartsController::class, 'import'])->setName('import-products-from-b24');
 
+    $group->get('operation-types', [OperationTypesController::class, 'list'])->setName('operation-types-list');
+//    $group->get('operation-types/{id}', [UsersController::class, 'get'])->setName('operation-type-resource');
+//    $group->post('operation-types', [UsersController::class, 'create'])->setName('add-operation-type');
+//    $group->patch('operation-types/{id}', [UsersController::class, 'remove'])->setName('update-operation-type');
 });
 
 
