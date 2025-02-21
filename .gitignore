@@ -61,3 +61,6 @@ yarn.lock
 # Testing
 /coverage
 .phpunit.cache
+
+#Other
+./Dockerfile

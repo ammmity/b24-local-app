@@ -2,19 +2,19 @@ import { createApp } from 'vue'
 import './style.css'
 import App from './App.vue'
 import router from './router';
+import ElementPlus from 'element-plus'; // Импорт Element Plus
+import 'element-plus/dist/index.css'; // Импорт стилей
 
 // Создание приложения
 const app = createApp(App);
 
-// Получение переменной из атрибута
+// Получение переменной из атрибута && Передача переменной в корневой компонент через provide
 const appElement = document.getElementById('app');
 const dealId = appElement.getAttribute('data-deal-id');
-
-// Передача переменной в корневой компонент через provide
 app.provide('dealId', dealId);
 
-// Использование роутера
 app.use(router);
+app.use(ElementPlus);
 
 // Монтирование приложения
 app.mount('#app');

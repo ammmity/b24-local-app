@@ -21,7 +21,7 @@
 
 <script>
 import {defineComponent, inject, onMounted, ref} from 'vue';
-import apiClient from '../../api'; // Импортируйте настроенный axios
+import apiClient from '../../api';
 
 export default defineComponent({
   name: 'Deal',
@@ -35,7 +35,6 @@ export default defineComponent({
       try {
         const response = await apiClient.get('/deals/'+dealId);
         deal.value = response.data;
-        window.console.log(deal.value);
       } catch (err) {
         error.value = 'Ошибка при получении данных: ' + err.message;
       }
