@@ -1,0 +1,23 @@
+{
+    "name": "leet/furama-b24-app",
+    "autoload": {
+        "psr-4": {
+            "App\\": "src/"
+        }
+    },
+    "require": {
+        "slim/slim": "4.*",
+        "slim/psr7": "^1.7",
+        "twig/twig": "^3.0",
+        "slim/twig-view": "^3.4",
+        "php-di/php-di": "^7.0",
+        "robmorgan/phinx": "^0.16.6",
+        "doctrine/orm": "^3.3",
+        "symfony/cache": "^7.2",
+        "doctrine/migrations": "^3.8"
+    },
+    "minimum-stability": "stable",
+    "require-dev": {
+        "symfony/maker-bundle": "^1.62"
+    }
+}

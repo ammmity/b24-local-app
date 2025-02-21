@@ -1,0 +1,50 @@
+#!/usr/bin/env php
+<?php
+
+use Doctrine\ORM\Tools\Console\EntityManagerProvider\SingleManagerProvider;
+use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\DriverManager;
+use App\Services\CRestService;
+use App\Settings\Settings;
+use App\Settings\SettingsInterface;
+use Doctrine\ORM\ORMSetup;
+use Doctrine\ORM\EntityManager;
+use Doctrine\ORM\Tools\Console\ConsoleRunner;
+use Doctrine\ORM\Tools\Console\EntityManagerProvider;
+
+require_once __DIR__ . '/../vendor/autoload.php';
+
+$container = new DI\Container([
+    SettingsInterface::class => function () {
+        return new Settings(require_once __DIR__ . '/../config/settings.php');
+    },
+    CRestService::class => DI\factory(function () {
+        return new CRestService();
+    }),
+    Connection::class => DI\factory(function (SettingsInterface $settings) {
+        $dbSettings = $settings->get('db');
+        $connectionParams = [
+            'dbname' => $dbSettings['dbname'],
+            'user' => $dbSettings['user'],
+            'password' => $dbSettings['password'],
+            'host' => $dbSettings['host'],
+            'driver' => $dbSettings['driver'],
+            'port' => $dbSettings['port'],
+        ];
+        return DriverManager::getConnection($connectionParams);
+    }),
+    EntityManager::class => DI\factory(function (Connection $connection) {
+        static $instance = null;
+        if ($instance === null) {
+            $isDevMode = false;
+            $entityPaths = [__DIR__ . "/../src/Entities"];
+            $config = ORMSetup::createAttributeMetadataConfiguration($entityPaths, $isDevMode);
+            $instance = new EntityManager($connection, $config);
+        }
+        return $instance;
+    })
+]);
+$entityManager = $container->get(EntityManager::class);
+
+ConsoleRunner::run(new SingleManagerProvider($container->get(EntityManager::class)));
+

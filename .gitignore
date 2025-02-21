@@ -1,0 +1,62 @@
+# Dependencies
+/node_modules
+/vendor
+
+# Build files
+/dist
+/build
+/public/hot
+/public/storage
+/public/build
+/public/dist
+/logs
+
+# Environment files
+.env
+.env.*
+!.env.example
+/public/settings.json
+phinx.php
+/config/settings.php
+/phinx.php
+
+# IDE files
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Debug files
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+*.log
+
+# Cache files
+.phpunit.result.cache
+.php_cs.cache
+.php-cs-fixer.cache
+/resources/templatesCache/*
+
+# Storage
+/storage/*.key
+/storage/framework/cache/*
+/storage/framework/sessions/*
+/storage/framework/views/*
+/storage/logs/*
+
+# Composer
+composer.phar
+composer.lock
+
+# NPM/Yarn
+package-lock.json
+yarn.lock
+
+# Testing
+/coverage
+.phpunit.cache

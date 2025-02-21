@@ -1,0 +1,11 @@
+<?php
+
+return [
+    'db' => [
+        'dbname' => '',
+        'user' => '',
+        'password' => '',
+        'host' => '',
+        'driver' => '',
+    ]
+];
