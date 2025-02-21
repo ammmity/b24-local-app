@@ -3,10 +3,11 @@ import axios from 'axios';
 
 const apiClient = axios.create({
     // baseURL: 'http://furama-goods.local:9995/api',
-    baseURL: 'http://localhost:8080/api',
+    baseURL: '/api',
     headers: {
         'Content-Type': 'application/json',
     },
+    withCredentials: true,
 });
 
 // Добавьте интерсепторы, если необходимо

@@ -18,7 +18,13 @@ export default defineConfig({
     }),
   ],
   server: {
-    port: 3003, // Укажите желаемый порт
+    // port: 3003, // Укажите желаемый порт
+    proxy: {
+      '/api': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+      },
+    },
   },
   build: {
     outDir: '../../public/dist', // Укажите выходную папку для сборки
