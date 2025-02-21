@@ -95,11 +95,6 @@ export default defineComponent({
 </script>
 
 <style scoped>
-/* Ваши стили для компонента Home */
-h1 {
-  color: #42b983;
-}
-
 .error-message {
   color: red;
   margin-top: 10px;

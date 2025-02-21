@@ -142,10 +142,6 @@ export default defineComponent({
 </script>
 
 <style scoped>
-.product-production {
-
-}
-
 .production-form {
   margin-top: 20px;
   background: #fff;
