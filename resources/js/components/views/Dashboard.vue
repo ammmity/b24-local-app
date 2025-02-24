@@ -1,48 +1,6 @@
 <template>
   <div>
-    <el-input
-      v-model="searchQuery"
-      placeholder="Поиск продуктов"
-      @input="debouncedSearch"
-    />
-
-    <el-table
-      v-if="productParts"
-      :data="productParts"
-      style="width: 100%; margin-top: 20px;"
-    >
-      <el-table-column prop="id" label="ID" width="80" />
-      <el-table-column prop="name" label="Название" />
-      <el-table-column prop="bitrix_id" label="Артикул" width="120" />
-      <el-table-column label="Действия" width="150">
-        <template #default="{ row }">
-          <el-button
-            type="primary"
-            size="small"
-            @click="openProductionModal(row.id)"
-          >
-            Производство
-          </el-button>
-        </template>
-      </el-table-column>
-    </el-table>
-
-    <div v-if="error" class="error-message">
-      {{ error }}
-    </div>
-
-    <!-- Добавляем модальное окно -->
-    <el-dialog
-      v-model="showProductionModal"
-      title="Производство продукта"
-      width="70%"
-      destroy-on-close
-    >
-      <ProductProduction
-        :product-id="selectedProductId"
-        @success="handleProductionSuccess"
-      />
-    </el-dialog>
+    <h1>Главная</h1>
   </div>
 </template>
 
@@ -68,7 +26,7 @@ export default defineComponent({
 
     const fetchProductParts = async () => {
       try {
-        const response = await apiClient.get('/products');
+        const response = await apiClient.get('/product-parts');
         productParts.value = response.data;
         window.console.log(productParts.value);
       } catch (err) {
@@ -78,7 +36,7 @@ export default defineComponent({
 
     const searchProductParts = async () => {
       try {
-        const response = await apiClient.get('/products', {
+        const response = await apiClient.get('/product-parts', {
           params: {
             name: searchQuery.value
           }
