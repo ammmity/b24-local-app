@@ -12,7 +12,7 @@ use Twig\Error\LoaderError;
 use Twig\Error\RuntimeError;
 use Twig\Error\SyntaxError;
 
-class DashboardController {
+class AppController {
     /**
      * @throws \Exception
      */
@@ -64,21 +64,21 @@ class DashboardController {
         return $view->render($response, 'app.html.twig');
     }
 
-    public function deal(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
+    public function dealProductionScheme(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
     {
         $queryParams = $request->getQueryParams();
         $requestParams = $request->getParsedBody();
-        $deal = null;
+        $dealId = null;
 
         if (!empty($requestParams['PLACEMENT_OPTIONS'])) {
-            $dealId = json_decode($requestParams['PLACEMENT_OPTIONS'], true)['ID'];
-            if (!empty($dealId)) {
-                $deal = ['id' => $dealId];
+            $dealData = json_decode($requestParams['PLACEMENT_OPTIONS'], true)['ID'];
+            if (!empty($dealData)) {
+                $dealId = $dealData;
             }
         }
 
         if (!empty($queryParams['id'])) {
-            $deal = ['id' => $queryParams['id']];
+            $dealId = $queryParams['id'];
         }
 
 //        $result = $this->CRestService->callMethod('crm.deal.fields',[]);
@@ -87,8 +87,8 @@ class DashboardController {
 //        return $response;
 
         $view = Twig::fromRequest($request);
-        return $view->render($response, 'deal.html.twig', [
-            'deal' => $deal
+        return $view->render($response, 'deal-production-scheme.html.twig', [
+            'dealId' => $dealId
         ]);
     }
 }

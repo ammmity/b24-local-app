@@ -52,6 +52,7 @@
 import {defineComponent, inject, onMounted, ref} from 'vue';
 import apiClient from '../../api';
 import ProductProduction from '../ProductProduction.vue';
+import { ElMessage } from 'element-plus';
 
 export default defineComponent({
   name: 'Details',
@@ -68,7 +69,7 @@ export default defineComponent({
 
     const fetchProductParts = async () => {
       try {
-        const response = await apiClient.get('/products');
+        const response = await apiClient.get('/product-parts');
         productParts.value = response.data;
       } catch (err) {
         error.value = 'Ошибка при получении данных: ' + err.message;
@@ -77,7 +78,7 @@ export default defineComponent({
 
     const searchProductParts = async () => {
       try {
-        const response = await apiClient.get('/products', {
+        const response = await apiClient.get('/product-parts', {
           params: {
             name: searchQuery.value
           }

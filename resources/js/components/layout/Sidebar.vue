@@ -14,9 +14,9 @@
       <template #title>Комплектующие</template>
     </el-menu-item>
 
-    <el-menu-item index="/app/deal/" @click="$router.push('/app/deal/')">
+    <el-menu-item v-if="dealId" index="/app/deal-production-scheme/" @click="$router.push('/app/deal-production-scheme/')">
       <el-icon><Tickets /></el-icon>
-      <template #title>Сделка</template>
+      <template #title>Процесс производства</template>
     </el-menu-item>
 
     <el-menu-item index="/app/operation-types/" @click="$router.push('/app/operation-types/')">
@@ -32,7 +32,7 @@
 </template>
 
 <script>
-import { defineComponent, ref, computed } from 'vue';
+import {defineComponent, ref, computed, inject} from 'vue';
 import { useRoute } from 'vue-router';
 import {
   DataLine,
@@ -50,12 +50,14 @@ export default defineComponent({
   setup() {
     const route = useRoute();
     const isCollapse = ref(false);
+    const dealId = inject('dealId');
 
     const activeRoute = computed(() => route.path);
 
     return {
       isCollapse,
-      activeRoute
+      activeRoute,
+      dealId
     };
   }
 });
