@@ -1,7 +1,7 @@
 <template>
   <el-container class="app-container">
     <el-aside width="auto">
-      <Sidebar />
+      <Sidebar v-if="!dealId" />
     </el-aside>
     <el-container>
       <el-main>
@@ -12,13 +12,20 @@
 </template>
 
 <script>
-import { defineComponent } from 'vue';
+import { defineComponent, inject } from 'vue';
 import Sidebar from './Sidebar.vue';
 
 export default defineComponent({
   name: 'AppLayout',
   components: {
     Sidebar
+  },
+  setup() {
+    const dealId = inject('dealId');
+
+    return {
+      dealId
+    };
   }
 });
 </script>
