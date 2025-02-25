@@ -14,9 +14,10 @@ class UsersController {
 
     public function list(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
     {
+        $queryParams = $request->getQueryParams();
         $filter = [];
-        if (!empty($args['find'])) {
-            $filter['FIND'] = "%{$args['find']}%";
+        if (!empty($queryParams['find'])) {
+            $filter['FIND'] = "%{$queryParams['find']}%";
         }
 
 //        if (empty($filter)) {} // TODO: add paging
