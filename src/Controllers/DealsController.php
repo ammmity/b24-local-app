@@ -28,15 +28,14 @@ class DealsController {
         $id = $args['id'];
 
         if (empty($id)) {
-            $response->getBody()->write(json_encode(['error' => 'Parameter id is required']));
+            $response->getBody()->write(json_encode(['error' => 'Не указан обязательный параметр id']));
             return $response;
         }
 
         $deal = null;
-        $products = null;
         $deal = $this->CRestService->callMethod('crm.deal.get', ['id' => $id])['result'] ?? null;
         if (empty($deal)) {
-            $response->getBody()->write(json_encode(['error' => 'Deal not exists']));
+            $response->getBody()->write(json_encode(['error' => 'Сделка не найдена']));
             return $response;
         }
 
@@ -44,41 +43,38 @@ class DealsController {
         $deal['dealProducts'] = $dealProducts;
 
         $products = [];
+        $productPartsRepository = $this->entityManager->getRepository(ProductPart::class);
         if ($dealProducts) {
             foreach ($dealProducts as $k => $dealProduct) {
                 $productRaw = $this->CRestService->callMethod('catalog.product.get', ['id' => $dealProduct['PRODUCT_ID']]);
-                $product = isset($productRaw['result']) ? $productRaw['result']['product'] : null;
+                $product = $productRaw['result']['product'];
+                $deal['dealProducts'][$k]['product'] = $product;
 
-//                if (isset($product['parentId'])) { // Если товар унаследован - возьмем детали из корневого товара TODO: wtf... найти решение
-//                    $parentProductRaw = $this->CRestService->callMethod('catalog.product.get', ['id' => $product['parentId']['value']]);
-//                    $parentProduct = isset($parentProductRaw['result']) ? $parentProductRaw['result']['product'] : null;
-//                    if (isset($parentProduct['property'.self::PRODUCT_PARTS_PROP_ID])) {
-//                        $product['property'.self::PRODUCT_PARTS_PROP_ID] = $parentProduct['property'.self::PRODUCT_PARTS_PROP_ID];
-//                    }
-//                }
+                // Инициализируем массивы для частей
+                $product['parts'] = [];
+                $deal['dealProducts'][$k]['parts'] = [];
 
-                // детали продукта
-                $isProductExistsAndProductPartsFilled =
-                    $product
-                    && isset($product['property'.self::PRODUCT_PARTS_PROP_ID]);
-                if ($isProductExistsAndProductPartsFilled) {
-                    $linkedProductParts = $product['property'.self::PRODUCT_PARTS_PROP_ID];
-                    foreach ($linkedProductParts as $linkedProductPart) {
-                        $product['parts'][] = $this->CRestService->callMethod('catalog.product.get', ['id' => $linkedProductPart['value']])['result']['product']['name'];;
+                // Проверяем наличие деталей продукта
+                $productPartsPropertyId = 'property' . self::PRODUCT_PARTS_PROP_ID;
+                if (isset($product[$productPartsPropertyId]) && is_array($product[$productPartsPropertyId])) {
+                    $linkedProductPartIds = array_column($product[$productPartsPropertyId], 'value');
+
+                    if (!empty($linkedProductPartIds)) {
+                        $linkedProductParts = $productPartsRepository->findBy(['bitrix_id' => $linkedProductPartIds]);
+
+                        foreach ($linkedProductParts as $linkedProductPart) {
+                            $productPart = $linkedProductPart->toArray();
+                            $product['parts'][] = $productPart;
+                            $deal['dealProducts'][$k]['parts'][] = $productPart;
+                        }
                     }
                 }
-//                else {
-//                    continue;
-//                }
+
                 $products[] = $product;
             }
         }
 
-
-        $response->getBody()->write(json_encode([
-            'deal' => $deal,
-            'products' => $products,
-        ]));
+        $response->getBody()->write(json_encode($deal));
 
         return $response;
     }
