@@ -237,7 +237,7 @@ export default defineComponent({
       try {
         const response = await apiClient.get(`/deals/${id}`);
         if (response.data.error) {
-          errors.value.push(response.data.error.message);
+          errors.value.push(response.data.error);
           return; // Прерываем выполнение функции
         }
         deal.value = response.data;
