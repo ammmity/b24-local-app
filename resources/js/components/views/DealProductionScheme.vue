@@ -1,5 +1,54 @@
 <template>
   <div v-if="deal && !hasErrors">
+    <h2>Схема производства</h2>
+
+    <el-card class="deal-info-card">
+      <el-descriptions :column="2" border>
+        <el-descriptions-item label="Статус">
+          <el-tag :type="getStatusType">
+            {{ getStatusText }}
+          </el-tag>
+        </el-descriptions-item>
+        <el-descriptions-item label="Приоритет">
+          <el-tag :type="getTypeType">
+            {{ getTypeText }}
+          </el-tag>
+        </el-descriptions-item>
+      </el-descriptions>
+
+      <div class="actions-panel">
+
+        <el-button
+          type="warning"
+          :loading="isLoadingStatuses"
+          @click="loadOperationStatuses"
+          :disabled="productionScheme?.status !== 'progress'"
+          plain
+        >
+          Получить актуальные статусы операций
+        </el-button>
+
+        <el-button
+          type="primary"
+          :loading="isSaving"
+          @click="saveProductionScheme"
+          :disabled="hasErrors || !tableData.length"
+        >
+          {{ productionScheme ? 'Обновить производство' : 'Создать производство' }}
+        </el-button>
+
+        <el-button
+          v-if="productionScheme && productionScheme.status === 'prepare'"
+          type="success"
+          :loading="isStarting"
+          @click="startProduction"
+          :disabled="hasErrors || !tableData.length || !allExecutorsAssigned"
+        >
+          Запустить производство
+        </el-button>
+      </div>
+    </el-card>
+
     <div v-for="(tableGroup, operationType) in groupedTableData" :key="operationType" class="table-group">
       <h3 class="operation-type-title">{{ operationType }}</h3>
       <el-table
@@ -11,24 +60,31 @@
         <el-table-column
           prop="stage"
           label="Этап"
-          width="80"
+
         />
         <el-table-column
           prop="product"
           label="Продукт"
+
         />
         <el-table-column
           prop="part"
           label="Деталь"
+
+        />
+        <el-table-column
+          prop="operation"
+          label="Операция"
+
         />
         <el-table-column
           prop="quantity"
-          label="Количество"
-          width="120"
+          label="Кол-во"
+
         />
         <el-table-column
           label="Исполнитель"
-          width="200"
+
         >
           <template #default="{ row }">
             <el-select
@@ -39,6 +95,7 @@
               :remote-method="remoteSearch"
               :loading="loading"
               size="small"
+              :disabled="productionScheme?.status === 'progress'"
             >
               <el-option
                 v-for="item in executors"
@@ -51,7 +108,6 @@
         </el-table-column>
         <el-table-column
           label="Передать"
-          width="200"
         >
           <template #default="{ row }">
             <el-select
@@ -62,6 +118,7 @@
               :remote-method="remoteSearch"
               :loading="loading"
               size="small"
+              :disabled="!productionScheme"
             >
               <el-option
                 v-for="item in executors"
@@ -103,6 +160,7 @@
 <script>
 import {defineComponent, inject, watch, onMounted, ref, computed} from 'vue';
 import apiClient from '../../api';
+import { ElMessage } from 'element-plus';
 
 export default defineComponent({
   name: 'DealProductionScheme',
@@ -113,6 +171,10 @@ export default defineComponent({
     const errors = ref([]);
     const loading = ref(false);
     const executors = ref([]);
+    const productionScheme = ref(null);
+    const isSaving = ref(false);
+    const isStarting = ref(false);
+    const isLoadingStatuses = ref(false);
 
     const hasErrors = computed(() => errors.value.length > 0);
 
@@ -125,24 +187,27 @@ export default defineComponent({
       deal.value.dealProducts.forEach(product => {
         if (!product.parts) return;
 
-        const productName = product.product?.name || 'Неизвестный продукт';
-        const quantity = product.QUANTITY || '';
-
         product.parts.forEach(part => {
           if (!part.production_stages) return;
 
-          const partName = part.name || 'Неизвестная деталь';
-
           part.production_stages.forEach(stage => {
+            const schemeStage = productionScheme.value?.stages?.find(s =>
+              Number(s.product_part_id) === Number(part.id) &&
+              Number(s.operation_type_id) === Number(stage.operation_type_id)
+            );
+
             rows.push({
               stage: stage.stage || '',
-              product: productName,
-              part: partName,
+              product: product.product?.name || 'Неизвестный продукт',
+              part: part.name || 'Неизвестная деталь',
+              part_id: part.id,
               operation: stage.operation_type?.name || 'Неизвестная операция',
+              operation_type_id: stage.operation_type_id,
               machine: stage.operation_type?.machine || 'Неизвестная операция',
-              quantity: quantity,
-              executor: '',
-              transfer: ''
+              quantity: product.QUANTITY || '',
+              executor: schemeStage?.executor_id?.toString() || '',
+              transfer: schemeStage?.transfer_to_id?.toString() || '',
+              id: stage.id
             });
           });
         });
@@ -287,23 +352,172 @@ export default defineComponent({
       }
     };
 
-    // Следим за изменением dealId
-    watch(() => dealId, (newDealId) => {
-      if (newDealId) {
-        fetchDealData(newDealId);
+    const fetchProductionScheme = async (id) => {
+      try {
+        const response = await apiClient.get(`/production-schemes/${id}`);
+        productionScheme.value = response.data;
+      } catch (error) {
+        console.error('Error fetching production scheme:', error);
+        // Не добавляем ошибку в errors.value, так как отсутствие схемы - это нормальное состояние
       }
-    }, { immediate: true });
+    };
+
+    const prepareStagesData = () => {
+      return tableData.value.map((row, index) => ({
+        product_part_id: row.part_id,
+        operation_type_id: row.operation_type_id,
+        stage_number: index + 1,
+        quantity: row.quantity,
+        executor_id: row.transfer ? parseInt(row.transfer) : (row.executor ? parseInt(row.executor) : null),
+        transfer_to_id: row.transfer ? parseInt(row.transfer) : null
+      }));
+    };
+
+    const getStatusType = computed(() => {
+      if (!productionScheme.value) return 'info';
+      switch (productionScheme.value.status) {
+        case 'prepare': return 'info';
+        case 'progress': return 'primary';
+        case 'done': return 'success';
+        default: return 'info';
+      }
+    });
+
+    const getStatusText = computed(() => {
+      if (!productionScheme.value) return 'Ожидает настройки';
+      switch (productionScheme.value.status) {
+        case 'prepare': return 'Подготовка';
+        case 'progress': return 'В производстве';
+        case 'done': return 'Завершено';
+        default: return 'Ожидает настройки';
+      }
+    });
+
+    const getTypeType = computed(() => {
+      if (!productionScheme.value) return 'info';
+      return productionScheme.value.type === 'important' ? 'danger' : 'success';
+    });
+
+    const getTypeText = computed(() => {
+      if (!productionScheme.value) return 'Стандартный';
+      return productionScheme.value.type === 'important' ? 'Важный' : 'Стандартный';
+    });
+
+    const saveProductionScheme = async () => {
+      try {
+        isSaving.value = true;
+        const stages = prepareStagesData();
+        const payload = {
+          deal_id: dealId,
+          stages: stages
+        };
+
+        let response;
+        if (productionScheme.value) {
+          response = await apiClient.patch(
+            `/production-schemes/${dealId}`,
+            payload
+          );
+        } else {
+          response = await apiClient.post('/production-schemes', payload);
+        }
+
+        productionScheme.value = response.data;
+        ElMessage({
+          type: 'success',
+          message: productionScheme.value ? 'Схема производства обновлена' : 'Схема производства создана'
+        });
+      } catch (error) {
+        console.error('Error saving production scheme:', error);
+        ElMessage({
+          type: 'error',
+          message: error.response?.data?.error || 'Ошибка при сохранении схемы производства'
+        });
+      } finally {
+        isSaving.value = false;
+      }
+    };
+
+    // Проверка, что все исполнители назначены
+    const allExecutorsAssigned = computed(() => {
+      return tableData.value.every(row => row.executor);
+    });
+
+    // Добавляем метод запуска производства
+    const startProduction = async () => {
+      try {
+        isStarting.value = true;
+        const response = await apiClient.patch(`/production-schemes/${dealId}`, {
+          status: 'progress'
+        });
+
+        productionScheme.value = response.data;
+
+        ElMessage({
+          type: 'success',
+          message: 'Производство запущено'
+        });
+      } catch (error) {
+        console.error('Error starting production:', error);
+        ElMessage({
+          type: 'error',
+          message: error.response?.data?.error || 'Ошибка при запуске производства'
+        });
+      } finally {
+        isStarting.value = false;
+      }
+    };
+
+    const loadOperationStatuses = async () => {
+      try {
+        isLoadingStatuses.value = true;
+        await fetchProductionScheme(dealId);
+
+        ElMessage({
+          type: 'success',
+          message: 'Статусы операций обновлены'
+        });
+      } catch (error) {
+        console.error('Error loading operation statuses:', error);
+        ElMessage({
+          type: 'error',
+          message: 'Ошибка при загрузке статусов операций'
+        });
+      } finally {
+        isLoadingStatuses.value = false;
+      }
+    };
+
+    // Следим за изменением dealId
+    // watch(() => dealId, async (newDealId) => {
+    //   if (newDealId) {
+    //     // Убедимся что пользователи загружены
+    //     if (!executors.value.length) {
+    //       await fetchUsers();
+    //     }
+    //     await Promise.all([
+    //       fetchDealData(newDealId),
+    //       fetchProductionScheme(newDealId)
+    //     ]);
+    //   }
+    // }, { immediate: true });
 
     // Следим за изменениями в deal
     watch(() => deal.value, () => {
       checkDealProducts();
     });
 
-    onMounted(() => {
+    onMounted(async () => {
+      // Сначала загружаем пользователей
+      await fetchUsers();
+
       if (dealId) {
-        // fetchDealData(dealId);
-        fetchOperationTypesData();
-        fetchUsers(); // Загружаем список пользователей при монтировании компонента
+        // Только после загрузки пользователей выполняем остальные запросы
+        await Promise.all([
+          fetchDealData(dealId),
+          fetchOperationTypesData(),
+          fetchProductionScheme(dealId)
+        ]);
       }
     });
 
@@ -317,7 +531,19 @@ export default defineComponent({
       groupedTableData,
       executors,
       loading,
-      remoteSearch
+      remoteSearch,
+      productionScheme,
+      isSaving,
+      saveProductionScheme,
+      getStatusType,
+      getStatusText,
+      getTypeType,
+      getTypeText,
+      isStarting,
+      allExecutorsAssigned,
+      startProduction,
+      isLoadingStatuses,
+      loadOperationStatuses,
     };
   },
 });
@@ -413,5 +639,20 @@ export default defineComponent({
 
 :deep(.el-table__row:hover) {
   background-color: #f0f9ff !important;
+}
+
+.deal-info-card {
+  margin-bottom: 20px;
+}
+
+:deep(.el-descriptions__label) {
+  font-weight: bold;
+}
+
+.actions-panel {
+  margin-top: 16px;
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
 }
 </style>

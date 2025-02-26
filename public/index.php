@@ -23,11 +23,11 @@ use App\Controllers\{
     ProductPartsController,
     DealsController,
     OperationTypesController,
-    ProductProductionStagesController
+    ProductProductionStagesController,
+    ProductionSchemesController
 };
 use Doctrine\ORM\ORMSetup;
 use Doctrine\ORM\EntityManager;
-use Doctrine\ORM\Tools\Setup;
 use Doctrine\ORM\Mapping\Driver\AttributeDriver;
 
 require __DIR__ . '/../vendor/autoload.php';
@@ -97,6 +97,10 @@ $app->group('/api/', function (RouteCollectorProxy $group) {
 
     $group->any('users', [UsersController::class, 'list'])->setName('users-list');
     $group->any('users/{id}', [UsersController::class, 'get'])->setName('user-resource');
+
+    $group->get('production-schemes/{id}', [ProductionSchemesController::class, 'get'])->setName('get-deal-production-scheme');
+    $group->post('production-schemes', [ProductionSchemesController::class, 'store'])->setName('deal-production-scheme-resource');
+    $group->patch('production-schemes/{id}', [ProductionSchemesController::class, 'update'])->setName('update-deal-production-scheme');
 
     $group->any('product-parts', [ProductPartsController::class, 'list'])->setName('products-parts-list');
     $group->any('product-parts/{id}', [ProductPartsController::class, 'get'])->setName('product-parts-resource');
