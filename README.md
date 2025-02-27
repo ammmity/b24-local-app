@@ -25,6 +25,7 @@
 - заполнить подключение к бд в phinx.php, config/settings.php, 
 - `./bin/doctrine orm:schema-tool:update --force`
 - `vendor/bin/phinx migrate -e development`
+- `./bin/doctrine orm:generate-proxies`
 
 ### frontend
 - `npm run build`
