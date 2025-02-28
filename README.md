@@ -8,7 +8,7 @@
 - **PHP 8.1 +**
 - **Slim 4** — фреймворк для создания API.
 - **Phinx** — миграции базы данных.
-- **Doctrine ORM** — работа с базой данных через объектно-ориентированный подход.
+- **Doctrine ORM** — работа с базой данных, только orm, не бандл.
 - **PHP-DI** — контейнер для внедрения зависимостей.
 - **Twig** — шаблонизатор для генерации HTML.
 
@@ -25,6 +25,7 @@
 - заполнить подключение к бд в phinx.php, config/settings.php, 
 - `./bin/doctrine orm:schema-tool:update --force`
 - `vendor/bin/phinx migrate -e development`
+- `./bin/doctrine orm:generate-proxies`
 
 ### frontend
 - `npm run build`

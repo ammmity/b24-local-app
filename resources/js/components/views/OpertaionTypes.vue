@@ -23,17 +23,6 @@
       <el-table-column prop="id" label="ID" width="80" />
       <el-table-column prop="name" label="Операция" />
       <el-table-column prop="machine" label="Рабочее место" />
-      <el-table-column label="Действия" width="150">
-        <template #default="{ row }">
-          <el-button
-            type="primary"
-            size="small"
-            @click="editOperationType(row)"
-          >
-            Редактировать
-          </el-button>
-        </template>
-      </el-table-column>
     </el-table>
 
     <!-- Модальное окно создания -->
@@ -46,7 +35,7 @@
         ref="createFormRef"
         :model="createForm"
         :rules="formRules"
-        label-width="120px"
+        label-width="160px"
       >
         <el-form-item label="Операция" prop="name">
           <el-input v-model="createForm.name" />
@@ -128,11 +117,6 @@ export default defineComponent({
       }, 300);
     };
 
-    const editOperationType = (row) => {
-      // Здесь будет логика редактирования
-      console.log('Редактирование типа операции:', row);
-    };
-
     const submitCreate = async () => {
       if (!createFormRef.value) return;
 
@@ -158,7 +142,6 @@ export default defineComponent({
       error,
       searchQuery,
       debouncedSearch,
-      editOperationType,
       showCreateModal,
       createFormRef,
       createForm,

@@ -17,17 +17,17 @@ use App\Middlewares\{
     CorsResponseMiddleware
 };
 use App\Controllers\{
-    DashboardController,
+    AppController,
     InstallB24AppController,
     UsersController,
     ProductPartsController,
     DealsController,
     OperationTypesController,
-    ProductProductionStagesController
+    ProductProductionStagesController,
+    ProductionSchemesController
 };
 use Doctrine\ORM\ORMSetup;
 use Doctrine\ORM\EntityManager;
-use Doctrine\ORM\Tools\Setup;
 use Doctrine\ORM\Mapping\Driver\AttributeDriver;
 
 require __DIR__ . '/../vendor/autoload.php';
@@ -38,7 +38,9 @@ $container = new DI\Container([
     },
     CRestService::class => DI\factory(function () {
         return new CRestService();
-    }),
+    }, [
+        'cache' => false
+    ]),
     Connection::class => DI\factory(function (SettingsInterface $settings) {
         $dbSettings = $settings->get('db');
         $connectionParams = [
@@ -84,8 +86,8 @@ $app->add(CorsResponseMiddleware::class);
 
 // Routes
 $app->group('/app/', function (RouteCollectorProxy $group) {
-    $group->any('', [DashboardController::class, 'dashboard'])->setName('dashboard');
-    $group->any('deal/', [DashboardController::class, 'deal'])->setName('deal');
+    $group->any('', [AppController::class, 'dashboard'])->setName('dashboard');
+    $group->any('deal-production-scheme/', [AppController::class, 'dealProductionScheme'])->setName('deal-production-scheme');
     $group->any('install/', [InstallB24AppController::class, 'install'])->setName('install-as-b24-app');
 });
 
@@ -96,9 +98,13 @@ $app->group('/api/', function (RouteCollectorProxy $group) {
     $group->any('users', [UsersController::class, 'list'])->setName('users-list');
     $group->any('users/{id}', [UsersController::class, 'get'])->setName('user-resource');
 
-    $group->any('products', [ProductPartsController::class, 'list'])->setName('products-list');
-    $group->any('products/{id}', [ProductPartsController::class, 'get'])->setName('product-resource');
-    $group->any('products/import/', [ProductPartsController::class, 'import'])->setName('import-products-from-b24');
+    $group->get('production-schemes/{id}', [ProductionSchemesController::class, 'get'])->setName('get-deal-production-scheme');
+    $group->post('production-schemes', [ProductionSchemesController::class, 'store'])->setName('deal-production-scheme-resource');
+    $group->patch('production-schemes/{id}', [ProductionSchemesController::class, 'update'])->setName('update-deal-production-scheme');
+
+    $group->any('product-parts', [ProductPartsController::class, 'list'])->setName('products-parts-list');
+    $group->any('product-parts/{id}', [ProductPartsController::class, 'get'])->setName('product-parts-resource');
+    $group->any('product-parts/import/', [ProductPartsController::class, 'import'])->setName('import-product-parts-from-b24');
 
     $group->get('operation-types', [OperationTypesController::class, 'list'])->setName('operation-types-list');
     $group->get('operation-types/{id}', [OperationTypesController::class, 'get'])->setName('operation-type-resource');

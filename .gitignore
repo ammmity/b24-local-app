@@ -21,6 +21,8 @@ phinx.php
 /config/settings.php
 /phinx.php
 /src/CRest/settings.json
+/src/CRest/settings.php
+
 
 # IDE files
 .idea/

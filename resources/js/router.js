@@ -1,9 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import AppLayout from './components/layout/AppLayout.vue';
 import Dashboard from './components/views/Dashboard.vue';
-import Deal from './components/views/Deal.vue';
 import Settings from './components/views/Settings.vue';
-// import ProductProduction from './components/views/ProductProduction.vue';
 
 const routes = [
     {
@@ -21,9 +19,9 @@ const routes = [
                 component: () => import('./components/views/Details.vue')
             },
             {
-                path: 'deal',
-                name: 'Deal',
-                component: Deal,
+                path: 'deal-production-scheme',
+                name: 'Deal production scheme',
+                component: () => import('./components/views/DealProductionScheme.vue')
             },
             {
                 path: 'settings',
