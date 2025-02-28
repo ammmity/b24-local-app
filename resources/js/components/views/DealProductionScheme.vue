@@ -230,6 +230,11 @@ export default defineComponent({
         grouped[operationType].push(row);
       });
 
+      // Сортируем каждую группу по полю stage
+      Object.keys(grouped).forEach(key => {
+        grouped[key].sort((a, b) => a.stage - b.stage);
+      });
+
       return grouped;
     });
 
@@ -363,10 +368,10 @@ export default defineComponent({
     };
 
     const prepareStagesData = () => {
-      return tableData.value.map((row, index) => ({
+      return tableData.value.map(row => ({
         product_part_id: row.part_id,
         operation_type_id: row.operation_type_id,
-        stage_number: index + 1,
+        stage_number: row.stage,
         quantity: row.quantity,
         executor_id: row.transfer ? parseInt(row.transfer) : (row.executor ? parseInt(row.executor) : null),
         transfer_to_id: row.transfer ? parseInt(row.transfer) : null
