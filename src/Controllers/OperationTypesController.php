@@ -1,8 +1,10 @@
 <?php
 namespace App\Controllers;
 
+use App\Entities\BitrixGroupKanbanStage;
 use App\Entities\OperationType;
 use App\Services\CRestService;
+use App\Services\KanbanStageService;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Http\Message\ResponseInterface;
@@ -18,7 +20,8 @@ class OperationTypesController {
      */
     public function __construct(
         protected CRestService $CRestService,
-        protected EntityManagerInterface $entityManager
+        protected EntityManagerInterface $entityManager,
+        protected KanbanStageService $kanbanStageService
     )
     {}
 
@@ -47,6 +50,7 @@ class OperationTypesController {
                 'id' => $operationType->getId(),
                 'name' => $operationType->getName(),
                 'machine' => $operationType->getMachine(),
+                'bitrix_group_id' => $operationType->getBitrixGroupId(),
             ], $operationTypes);
         }
 
@@ -86,9 +90,33 @@ class OperationTypesController {
             return $response->withStatus(400);
         }
 
-        $operationType = new OperationType($data['name'], $data['machine']);
+        $operationType = new OperationType($data['name'], $data['machine'], $data['bitrix_group_id']);
+
         $this->entityManager->persist($operationType);
         $this->entityManager->flush();
+
+        // Создание стадий для канбана группы
+        $stages = $this->kanbanStageService->getOrCreateStages($data['bitrix_group_id']);
+        // Сохраним связь в бд
+        foreach ($stages as $stage) {
+            $bitrixGroupKanbanRepository = $this->entityManager->getRepository(BitrixGroupKanbanStage::class);
+            $isStageExists = $bitrixGroupKanbanRepository->findOneBy([
+                'bitrix_group_id' => $data['bitrix_group_id'],
+                'stage_id' => $stage['id']
+            ]);
+
+            if (!$isStageExists) {
+                $newStage = new BitrixGroupKanbanStage(
+                    (string) $data['bitrix_group_id'],
+                    (string) $stage['id'],
+                    (string) $stage['title'],
+                );
+                $this->entityManager->persist($newStage);
+            }
+        }
+
+        $this->entityManager->flush();
+
 
         $response->getBody()->write(json_encode($operationType->toArray()));
         return $response;
@@ -106,7 +134,7 @@ class OperationTypesController {
             return $response;
         }
 
-        $operationType = new OperationType($data['name'], $data['machine']);
+        $operationType = new OperationType($data['name'], $data['machine'], $data['bitrix_group_id']);
         $this->entityManager->persist($operationType);
         $this->entityManager->flush();
 

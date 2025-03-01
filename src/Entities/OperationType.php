@@ -20,10 +20,14 @@ class OperationType
     #[Column(type: 'string', unique: true, nullable: false)]
     private $machine;
 
-    public function __construct(string $name, string $machine)
+    #[Column(type: 'string', nullable: false)]
+    private string $bitrix_group_id;
+
+    public function __construct(string $name, string $machine, string $bitrix_group_id)
     {
         $this->setName($name);
         $this->setMachine($machine);
+        $this->setBitrixGroupId($bitrix_group_id);
     }
 
     public function toArray(): array
@@ -32,6 +36,7 @@ class OperationType
             'id' => $this->getId(),
             'name' => $this->getName(),
             'machine' => $this->getMachine(),
+            'bitrix_group_id' => $this->getBitrixGroupId(),
         ];
     }
 
@@ -59,6 +64,17 @@ class OperationType
     public function setMachine(string $machine): self
     {
         $this->machine = $machine;
+        return $this;
+    }
+
+    public function getBitrixGroupId(): string
+    {
+        return $this->bitrix_group_id;
+    }
+
+    public function setBitrixGroupId(string $bitrix_group_id): self
+    {
+        $this->bitrix_group_id = $bitrix_group_id;
         return $this;
     }
 }

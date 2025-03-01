@@ -1,5 +1,6 @@
 <?php
 
+use App\Entities\BitrixGroupKanbanStage;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\DriverManager;
 use Doctrine\ORM\EntityManagerInterface;
@@ -10,6 +11,7 @@ use Slim\Routing\RouteCollectorProxy;
 use Slim\Views\Twig;
 use Slim\Views\TwigMiddleware;
 use App\Services\CRestService;
+use App\Services\KanbanStageService;
 use App\Settings\Settings;
 use App\Settings\SettingsInterface;
 use App\Middlewares\{
@@ -24,7 +26,8 @@ use App\Controllers\{
     DealsController,
     OperationTypesController,
     ProductProductionStagesController,
-    ProductionSchemesController
+    ProductionSchemesController,
+    GroupsController
 };
 use Doctrine\ORM\ORMSetup;
 use Doctrine\ORM\EntityManager;
@@ -41,6 +44,9 @@ $container = new DI\Container([
     }, [
         'cache' => false
     ]),
+    KanbanStageService::class => DI\factory(function (CRestService $CRestService) {
+        return new KanbanStageService($CRestService);
+    }),
     Connection::class => DI\factory(function (SettingsInterface $settings) {
         $dbSettings = $settings->get('db');
         $connectionParams = [
@@ -118,10 +124,61 @@ $app->group('/api/', function (RouteCollectorProxy $group) {
     $group->patch('product-operation-stages/{id}', [ProductProductionStagesController::class, 'update'])->setName('update-product-operation-stages');
     $group->delete('product-operation-stages/{id}', [ProductProductionStagesController::class, 'delete'])->setName('delete-product-operation-stages');
     $group->patch('product-operation-stages/reorder/', [ProductProductionStagesController::class, 'reorder'])->setName('reorder-product-operation-stages');
+
+    $group->get('groups', [GroupsController::class, 'list'])->setName('b24-groups-list');
 });
 
+$app->get('/test', function (Request $request, Response $response, $args) use ($container) {
+    $cRestService = $container->get(CRestService::class);
+    $entityManager = $container->get(EntityManagerInterface::class);
+    $currentUser = $cRestService->currentUser();
+
+    $newStage = new BitrixGroupKanbanStage(
+        5,
+        '123',
+        'test',
+    );
+
+    $entityManager->persist($newStage);
+    $entityManager->flush();
+
+    $stages = $cRestService->groupKanbanStages(5);
+    $response->getBody()->write(json_encode($newStage));
+    return $response;
+    // Сохраним связь в бд
+    foreach ($stages as $stage) {
+        $bitrixGroupKanbanRepository = $entityManager->getRepository(BitrixGroupKanbanStage::class);
+        $isStageExists = $bitrixGroupKanbanRepository->findOneBy(['bitrix_group_id' => 5]);
+        if (!$isStageExists) {
+            $newStage = new BitrixGroupKanbanStage(
+                5,
+                $stage['id'],
+                $stage['title'],
+            );
+            $entityManager->persist($newStage);
+        }
+    }
+
+    $entityManager->flush();
+
+//    $result = $cRestService->addTask([
+//        'fields' => [
+//            'TITLE' => 'Задача с бека юзер технолог', // Название задачи
+//            //'DEADLINE' => '2023-12-31T23:59:59', // Крайний срок
+//            'CREATED_BY' => $currentUser['ID'], // Идентификатор постановщика
+//            'RESPONSIBLE_ID' => 11, // Идентификатор исполнителя
+//            // Пример передачи нескольких значений в поле UF_CRM_TASK
+//            'UF_CRM_TASK' => [
+//                'D_' . '7'// Привязка к сделке
+//            ],
+//        ]
+//    ]);
+    $response->getBody()->write(json_encode($stages));
+    return $response;
+});
 
 $app->get('/', function (Request $request, Response $response, $args) use ($container) {
+
     $response->getBody()->write('Application');
     return $response;
 });

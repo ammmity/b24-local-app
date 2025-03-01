@@ -23,6 +23,11 @@
       <el-table-column prop="id" label="ID" width="80" />
       <el-table-column prop="name" label="Операция" />
       <el-table-column prop="machine" label="Рабочее место" />
+      <el-table-column label="Группа Bitrix">
+        <template #default="{ row }">
+          {{ getBitrixGroupName(row.bitrix_group_id) }}
+        </template>
+      </el-table-column>
     </el-table>
 
     <!-- Модальное окно создания -->
@@ -43,6 +48,20 @@
 
         <el-form-item label="Рабочее место" prop="machine">
           <el-input v-model="createForm.machine" />
+        </el-form-item>
+
+        <el-form-item label="Группа Bitrix" prop="bitrix_group_id">
+          <el-select 
+            v-model="createForm.bitrix_group_id" 
+            placeholder="Выберите группу"
+          >
+            <el-option
+              v-for="group in bitrixGroups"
+              :key="group.id"
+              :label="group.name"
+              :value="group.id"
+            />
+          </el-select>
         </el-form-item>
       </el-form>
 
@@ -73,7 +92,8 @@ export default defineComponent({
     const createFormRef = ref(null);
     const createForm = ref({
       name: '',
-      machine: ''
+      machine: '',
+      bitrix_group_id: ''
     });
 
     const formRules = {
@@ -82,6 +102,9 @@ export default defineComponent({
       ],
       machine: [
         { required: true, message: 'Введите название рабочего места', trigger: 'blur' }
+      ],
+      bitrix_group_id: [
+        { required: true, message: 'Выберите группу Bitrix', trigger: 'blur' }
       ]
     };
 
@@ -126,8 +149,8 @@ export default defineComponent({
             await apiClient.post('/operation-types', createForm.value);
             ElMessage.success('Тип операции успешно создан');
             showCreateModal.value = false;
-            createForm.value = { name: '', machine: '' };
-            await fetchOperationTypes(); // Обновляем список
+            createForm.value = { name: '', machine: '', bitrix_group_id: '' };
+            await fetchOperationTypes();
           } catch (error) {
             ElMessage.error(error.response.data.error);
           }
@@ -135,7 +158,29 @@ export default defineComponent({
       });
     };
 
-    onMounted(fetchOperationTypes);
+    const bitrixGroups = ref([]);
+
+    const fetchGroups = async () => {
+      try {
+        const response = await apiClient.get('/groups');
+        bitrixGroups.value = response.data;
+      } catch (error) {
+        console.error('Error fetching groups:', error);
+        ElMessage.error('Ошибка при загрузке списка групп');
+      }
+    };
+
+    const getBitrixGroupName = (groupId) => {
+      const group = bitrixGroups.value.find(g => g.id === groupId);
+      return group ? group.name : 'Не найдена';
+    };
+
+    onMounted(async () => {
+      await Promise.all([
+        fetchOperationTypes(),
+        fetchGroups()
+      ]);
+    });
 
     return {
       operationTypes,
@@ -146,7 +191,9 @@ export default defineComponent({
       createFormRef,
       createForm,
       formRules,
-      submitCreate
+      submitCreate,
+      bitrixGroups,
+      getBitrixGroupName
     };
   }
 });
@@ -162,5 +209,9 @@ export default defineComponent({
 .error-message {
   color: red;
   margin-top: 10px;
+}
+
+:deep(.el-select) {
+  width: 100%;
 }
 </style>

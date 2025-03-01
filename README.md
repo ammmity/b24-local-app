@@ -41,6 +41,9 @@
 2. placement
 3. catalog
 4. user
+5. socialnetwork
+6. tasks
+7. task
 
 ### Локальное приложение
 1. Укажите путь к вашему обработчику:  

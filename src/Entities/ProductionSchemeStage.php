@@ -8,6 +8,20 @@ use Doctrine\ORM\Mapping as ORM;
 #[ORM\Table(name: 'production_scheme_stages')]
 class ProductionSchemeStage
 {
+    public const STATUS_B24_TASK_NOT_LINKED = 0; // не создана задача в б24
+    public const STATUS_WAITING = 1;
+    public const STATUS_COMPLETED = 3;
+    public const STATUS_IN_PROGRESS = 27;
+    public const STATUS_NO_MATERIALS = 29;
+
+    public const STATUS_LABELS = [
+        self::STATUS_B24_TASK_NOT_LINKED => '',
+        self::STATUS_WAITING => 'В ожидании',
+        self::STATUS_COMPLETED => 'Завершено',
+        self::STATUS_IN_PROGRESS => 'В работе',
+        self::STATUS_NO_MATERIALS => 'Нет сырья'
+    ];
+
     #[ORM\Id]
     #[ORM\GeneratedValue(strategy: 'IDENTITY')]
     #[ORM\Column(type: 'integer')]
@@ -52,9 +66,14 @@ class ProductionSchemeStage
         $this->operationType = $operationType;
         $this->stageNumber = $stageNumber;
         $this->quantity = $quantity;
-        $this->status = 'new';
+        $this->status = self::STATUS_B24_TASK_NOT_LINKED;
         $this->executorId = null;
         $this->bitrixTaskId = null;
+    }
+
+    public function getStatusLabel(): string
+    {
+        return self::STATUS_LABELS[$this->status] ?? 'Неизвестный статус';
     }
 
     public function toArray(): array
@@ -68,6 +87,7 @@ class ProductionSchemeStage
             'quantity' => $this->quantity,
             'executor_id' => $this->executorId,
             'status' => $this->status,
+            'status_label' => $this->getStatusLabel(),
             'bitrix_task_id' => $this->bitrixTaskId,
             'product_part' => $this->productPart->toArray(),
             'operation_type' => $this->operationType->toArray()
@@ -117,4 +137,33 @@ class ProductionSchemeStage
         $this->quantity = $quantity;
         return $this;
     }
-} 
+
+    public function getStageNumber(): int
+    {
+        return $this->stageNumber;
+    }
+
+    public function setStageNumber(int $stageNumber): self
+    {
+        $this->stageNumber = $stageNumber;
+        return $this;
+    }
+
+    /**
+     * @return int
+     */
+    public function getStatus(): int
+    {
+        return $this->status;
+    }
+
+    /**
+     * @param int $status
+     * @return $this
+     */
+    public function setStatus(int $status): self
+    {
+        $this->status = $status;
+        return $this;
+    }
+}
