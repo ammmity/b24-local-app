@@ -8,6 +8,7 @@ use App\Entities\ProductionSchemeStage;
 use App\Entities\ProductPart;
 use App\Entities\OperationType;
 use App\Services\CRestService;
+use App\Services\ProductionSchemeService;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
@@ -15,8 +16,9 @@ use Psr\Http\Message\ServerRequestInterface as Request;
 class ProductionSchemesController
 {
     public function __construct(
-        private EntityManagerInterface $entityManager,
-        private CRestService $CRestService
+        protected EntityManagerInterface $entityManager,
+        protected CRestService $CRestService,
+        protected ProductionSchemeService $productionSchemeService,
     ) {}
 
     public function get(Request $request, Response $response, array $args): Response
@@ -176,13 +178,9 @@ class ProductionSchemesController
                         ]
                     ]);
                     $stage->setBitrixTaskId($b24Task['id']);
-                    $stage->setStatus($stage::STATUS_WAITING);
+                    $stage->setStatus('В ожидании');
                 }
             }
-        }
-
-        if (isset($data['status'])) {
-            $scheme->setStatus($data['status']);
         }
 
         if (isset($data['stages']) && is_array($data['stages'])) {
@@ -197,6 +195,18 @@ class ProductionSchemesController
                 if ($stage) {
                     // Обновляем существующий этап
                     if (isset($stageData['executor_id'])) {
+                        if (
+                            $stageData['executor_id'] !== $stage->getExecutorId()
+                            && !empty($stage->getBitrixTaskId())
+                        ) {
+                            $this->CRestService->updateTask([
+                                'taskId' => $stage->getBitrixTaskId(),
+                                'fields' => [
+                                    'RESPONSIBLE_ID' => $stageData['executor_id']
+                                ]
+                            ]);
+
+                        }
                         $stage->setExecutorId($stageData['executor_id']);
                     }
                     if (isset($stageData['bitrix_task_id'])) {
@@ -215,6 +225,10 @@ class ProductionSchemesController
             }
         }
 
+        if (isset($data['status'])) {
+            $scheme->setStatus($data['status']);
+        }
+
         $this->entityManager->flush();
 
         // Получаем свежие данные после обновления
@@ -224,6 +238,35 @@ class ProductionSchemesController
         $scheme->getStages()->toArray();
 
         $response->getBody()->write(json_encode($scheme->toArray()));
+        return $response;
+    }
+
+    public function sync(Request $request, Response $response, array $args): Response
+    {
+        $dealId = $args['id'] ?? null;
+
+        if (!$dealId) {
+            $response->getBody()->write(json_encode(['error' => 'deal_id is required']));
+            return $response;
+        }
+
+        try {
+            $scheme = $this->productionSchemeService->sync($dealId);
+
+            if (empty($scheme)) {
+                $response->getBody()->write(json_encode(['error' => 'deal_id is required']));
+                return $response;
+            }
+
+            $response->getBody()->write(json_encode($scheme->toArray()));
+            return $response;
+        } catch (\Exception $e) {
+            $response->getBody()->write(json_encode(['error' => $e->getMessage()]));
+            return $response;
+        }
+
+
+        $response->getBody()->write(json_encode($scheme));
         return $response;
     }
 

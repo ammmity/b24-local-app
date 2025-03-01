@@ -83,6 +83,15 @@
 
         />
         <el-table-column
+          v-if="productionScheme?.status === 'progress'"
+          prop="status"
+          label="Статус"
+        >
+          <template #default="{ row }">
+            <span :class="getStatusClass(row.status)">{{ row.status }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column
           label="Исполнитель"
 
         >
@@ -119,6 +128,7 @@
               :loading="loading"
               size="small"
               :disabled="!productionScheme"
+              @change="handleTransferChange(row)"
             >
               <el-option
                 v-for="item in executors"
@@ -207,7 +217,8 @@ export default defineComponent({
               quantity: product.QUANTITY || '',
               executor: schemeStage?.executor_id?.toString() || '',
               transfer: schemeStage?.transfer_to_id?.toString() || '',
-              id: stage.id
+              id: stage.id,
+              status: schemeStage?.status || ''
             });
           });
         });
@@ -373,6 +384,7 @@ export default defineComponent({
         operation_type_id: row.operation_type_id,
         stage_number: row.stage,
         quantity: row.quantity,
+        status: row.status,
         executor_id: row.transfer ? parseInt(row.transfer) : (row.executor ? parseInt(row.executor) : null),
         transfer_to_id: row.transfer ? parseInt(row.transfer) : null
       }));
@@ -407,6 +419,16 @@ export default defineComponent({
       if (!productionScheme.value) return 'Стандартный';
       return productionScheme.value.type === 'important' ? 'Важный' : 'Стандартный';
     });
+
+    const getStatusClass = (status) => {
+      switch (status) {
+        case 'В ожидании': return 'status-default';
+        case 'Завершены': return 'status-done';
+        case 'В работе': return 'status-in-progress';
+        case 'Нет сырья': return 'status-error';
+        default: return 'status-default';
+      }
+    };
 
     const saveProductionScheme = async () => {
       try {
@@ -476,7 +498,8 @@ export default defineComponent({
     const loadOperationStatuses = async () => {
       try {
         isLoadingStatuses.value = true;
-        await fetchProductionScheme(dealId);
+        const response = await apiClient.get(`/production-schemes/${dealId}/sync`);
+        productionScheme.value = response.data;
 
         ElMessage({
           type: 'success',
@@ -490,6 +513,12 @@ export default defineComponent({
         });
       } finally {
         isLoadingStatuses.value = false;
+      }
+    };
+
+    const handleTransferChange = (row) => {
+      if (row.transfer) {
+        row.executor = row.transfer;
       }
     };
 
@@ -549,6 +578,8 @@ export default defineComponent({
       startProduction,
       isLoadingStatuses,
       loadOperationStatuses,
+      handleTransferChange,
+      getStatusClass,
     };
   },
 });
@@ -659,5 +690,29 @@ export default defineComponent({
   display: flex;
   gap: 10px;
   justify-content: flex-end;
+}
+
+.status-done {
+  color: #67c23a;
+  font-weight: bold;
+}
+
+.status-in-progress {
+  color: #409eff;
+  font-weight: bold;
+}
+
+.status-waiting {
+  color: #e6a23c;
+  font-weight: bold;
+}
+
+.status-error {
+  color: #f56c6c;
+  font-weight: bold;
+}
+
+.status-default {
+  color: #909399;
 }
 </style>

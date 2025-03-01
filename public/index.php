@@ -12,6 +12,7 @@ use Slim\Views\Twig;
 use Slim\Views\TwigMiddleware;
 use App\Services\CRestService;
 use App\Services\KanbanStageService;
+use App\Services\ProductionSchemeService;
 use App\Settings\Settings;
 use App\Settings\SettingsInterface;
 use App\Middlewares\{
@@ -47,6 +48,11 @@ $container = new DI\Container([
     KanbanStageService::class => DI\factory(function (CRestService $CRestService) {
         return new KanbanStageService($CRestService);
     }),
+    ProductionSchemeService::class => DI\factory(function (CRestService $CRestService, EntityManagerInterface $entityManager) {
+        return new ProductionSchemeService($CRestService, $entityManager);
+    }, [
+        'cache' => false
+    ]),
     Connection::class => DI\factory(function (SettingsInterface $settings) {
         $dbSettings = $settings->get('db');
         $connectionParams = [
@@ -107,6 +113,7 @@ $app->group('/api/', function (RouteCollectorProxy $group) {
     $group->get('production-schemes/{id}', [ProductionSchemesController::class, 'get'])->setName('get-deal-production-scheme');
     $group->post('production-schemes', [ProductionSchemesController::class, 'store'])->setName('deal-production-scheme-resource');
     $group->patch('production-schemes/{id}', [ProductionSchemesController::class, 'update'])->setName('update-deal-production-scheme');
+    $group->get('production-schemes/{id}/sync', [ProductionSchemesController::class, 'sync'])->setName('sync-scheme-and-stages-statuses');
 
     $group->any('product-parts', [ProductPartsController::class, 'list'])->setName('products-parts-list');
     $group->any('product-parts/{id}', [ProductPartsController::class, 'get'])->setName('product-parts-resource');
@@ -132,6 +139,18 @@ $app->get('/test', function (Request $request, Response $response, $args) use ($
     $cRestService = $container->get(CRestService::class);
     $entityManager = $container->get(EntityManagerInterface::class);
     $currentUser = $cRestService->currentUser();
+
+    $updateTaskResult = $cRestService->updateTask([
+       'taskId' => 51,
+        'fields' => [
+            'RESPONSIBLE_ID' => 11
+        ]
+    ]);
+
+
+
+    $response->getBody()->write(json_encode($updateTaskResult));
+    return $response;
 
     $newStage = new BitrixGroupKanbanStage(
         5,

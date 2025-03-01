@@ -15,6 +15,19 @@ class CRestService
         return $this->callMethod('tasks.task.add', $params)['result']['task'];
     }
 
+    public function getTask(int $taskId, array $select = ['ID','TITLE'])
+    {
+        return $this->callMethod('tasks.task.get', [
+            'taskId' => $taskId,
+            'select' => $select
+        ])['result']['task'];
+    }
+
+    public function updateTask($params)
+    {
+        return $this->callMethod('tasks.task.update', $params);
+    }
+
     public function currentUser()
     {
         return $this->callMethod('user.current', [])['result'];
