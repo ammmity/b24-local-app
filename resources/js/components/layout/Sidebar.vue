@@ -24,10 +24,16 @@
       <template #title>Типы операций</template>
     </el-menu-item>
 
-    <el-menu-item index="/app/settings/" @click="$router.push('/app/settings/')">
-      <el-icon><Setting /></el-icon>
-      <template #title>Настройки</template>
+    <el-menu-item index="/app/operation-prices" @click="$router.push('/app/operation-prices/')">
+      <el-icon><PriceTag /></el-icon>
+      <template #title>Цены операций</template>
     </el-menu-item>
+
+    <el-menu-item index="/app/operation-logs" @click="$router.push('/app/operation-logs/')">
+      <el-icon><Setting /></el-icon>
+      <template #title>Логи операций</template>
+    </el-menu-item>
+
   </el-menu>
 </template>
 
@@ -38,6 +44,7 @@ import {
   DataLine,
   Tickets,
   Setting,
+  PriceTag
 } from '@element-plus/icons-vue';
 
 export default defineComponent({
@@ -46,6 +53,7 @@ export default defineComponent({
     DataLine,
     Tickets,
     Setting,
+    PriceTag
   },
   setup() {
     const route = useRoute();
