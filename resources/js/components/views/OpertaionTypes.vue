@@ -1,5 +1,7 @@
 <template>
   <div>
+    <h3>Типы операций</h3>
+    
     <div class="header-actions">
       <el-button
         type="primary"

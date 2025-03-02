@@ -1,6 +1,6 @@
 <template>
   <div v-if="deal && !hasErrors">
-    <h2>Схема производства</h2>
+    <h3>Схема производства</h3>
 
     <el-card class="deal-info-card">
       <el-descriptions :column="2" border>
@@ -88,7 +88,8 @@
           label="Статус"
         >
           <template #default="{ row }">
-            <span :class="getStatusClass(row.status)">{{ row.status }}</span>
+            <span v-if="row.status !== '0'" :class="getStatusClass(row.status)">{{ row.status }}</span>
+            <span v-else></span>
           </template>
         </el-table-column>
         <el-table-column
@@ -142,21 +143,6 @@
       </el-table>
     </div>
 
-    <h2>{{ deal.TITLE }}</h2>
-    <p>dealId: {{ dealId }}</p>
-    <p>Сумма: {{ deal.OPPORTUNITY }}</p>
-
-    <div class="products-container">
-    <div v-for="(item, index) in deal.dealProducts" :key="index" class="product-card">
-      <div class="product-header">ID: {{ item.ID }}</div>
-      <div class="product-details">
-        <div v-for="(value, key) in item" :key="key" class="detail-row">
-          <span class="detail-label">{{ key }}:</span>
-          <span class="detail-value">{{ value !== null ? value : 'Нет значения' }}</span>
-        </div>
-      </div>
-    </div>
-  </div>
   </div>
   <div v-else>
     <div v-if="errors.length > 0" class="error-container">
