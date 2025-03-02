@@ -43,6 +43,16 @@ class CRestService
         return $this->callMethod('task.stages.add', $params)['result'];
     }
 
+    public function eventBind(string $event,  string $handler)
+    {
+        return $this->callMethod('event.bind',
+            [
+                'event' => $event,
+                'handler' => $handler
+            ]
+        );
+    }
+
     /**
      * Получает стадии канбана
      *

@@ -2,6 +2,8 @@ import { createRouter, createWebHistory } from 'vue-router';
 import AppLayout from './components/layout/AppLayout.vue';
 import Dashboard from './components/views/Dashboard.vue';
 import Settings from './components/views/Settings.vue';
+import OperationPrices from './components/views/OperationPrices.vue';
+import OperationLogs from './components/views/OperationLogs.vue';
 
 const routes = [
     {
@@ -38,6 +40,16 @@ const routes = [
                 name: 'ProductProduction',
                 component: () => import('./components/views/ProductProduction.vue')
             },
+            {
+                path: 'operation-prices',
+                name: 'operation-prices',
+                component: () => import('./components/views/OperationPrices.vue'),
+            },
+            {
+                path: 'operation-logs',
+                name: 'operation-logs',
+                component: () => import('./components/views/OperationLogs.vue')
+            }
         ]
     }
 ];

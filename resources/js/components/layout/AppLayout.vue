@@ -1,7 +1,7 @@
 <template>
   <el-container class="app-container">
     <el-aside width="auto">
-      <Sidebar v-if="!dealId" />
+      <Sidebar v-if="!dealId"/>
     </el-aside>
     <el-container>
       <el-main>

@@ -1,6 +1,10 @@
 <template>
   <div>
-    <h1>Главная</h1>
+    <div class="header-actions">
+      <div class="content-placeholder">
+        <el-empty description="Раздел находится в разработке"></el-empty>
+      </div>
+    </div>
   </div>
 </template>
 

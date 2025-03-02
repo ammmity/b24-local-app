@@ -26,9 +26,12 @@ use App\Controllers\{
     ProductPartsController,
     DealsController,
     OperationTypesController,
+    OperationPricesController,
     ProductProductionStagesController,
     ProductionSchemesController,
-    GroupsController
+    GroupsController,
+    B24EventsController,
+    OperationLogsController
 };
 use Doctrine\ORM\ORMSetup;
 use Doctrine\ORM\EntityManager;
@@ -133,6 +136,128 @@ $app->group('/api/', function (RouteCollectorProxy $group) {
     $group->patch('product-operation-stages/reorder/', [ProductProductionStagesController::class, 'reorder'])->setName('reorder-product-operation-stages');
 
     $group->get('groups', [GroupsController::class, 'list'])->setName('b24-groups-list');
+
+
+    $group->get('b24-events/bind-event-handlers', [B24EventsController::class, 'bindEventHandlers'])->setName('b24-bind-event-handlers');
+    $group->post('b24-events/task-updated', [B24EventsController::class, 'taskUpdated'])->setName('b24-task-updated');
+
+    $group->get('operation-prices', [OperationPricesController::class, 'list'])->setName('operation-prices-list');
+    $group->get('operation-prices/{id}', [OperationPricesController::class, 'get'])->setName('operation-price-resource');
+    $group->post('operation-prices', [OperationPricesController::class, 'create'])->setName('add-operation-price');
+    $group->patch('operation-prices/{id}', [OperationPricesController::class, 'update'])->setName('update-operation-price');
+    $group->delete('operation-prices/{id}', [OperationPricesController::class, 'delete'])->setName('delete-operation-price');
+
+    $group->get('operation-logs', [OperationLogsController::class, 'list'])->setName('operation-logs-list');
+    $group->get('operation-logs/users', [OperationLogsController::class, 'getUsers'])->setName('operation-logs-users');
+    $group->get('operation-logs/{id}', [OperationLogsController::class, 'get'])->setName('operation-log-resource');
+    $group->post('operation-logs', [OperationLogsController::class, 'create'])->setName('add-operation-log');
+    $group->get('operation-logs/deal/{dealId}', [OperationLogsController::class, 'getByDealId'])->setName('get-operation-logs-by-deal');
+});
+
+$app->get('/fill-log', function (Request $request, Response $response, $args) use ($container) {
+    $entityManager = $container->get(EntityManagerInterface::class);
+    
+    // Создаем тестовых пользователей
+    $users = [
+        ['id' => 101, 'name' => 'Иванов Иван'],
+        ['id' => 102, 'name' => 'Петров Петр'],
+        ['id' => 103, 'name' => 'Сидорова Анна']
+    ];
+    
+    // Создаем тестовые операции
+    $operations = [
+        'Фрезеровка',
+        'Токарная обработка',
+        'Шлифовка',
+        'Сверление',
+        'Сборка',
+        'Покраска',
+        'Полировка',
+        'Контроль качества'
+    ];
+    
+    // Создаем тестовые детали
+    $details = [
+        ['id' => 201, 'name' => 'Корпус'],
+        ['id' => 202, 'name' => 'Крышка'],
+        ['id' => 203, 'name' => 'Вал'],
+        ['id' => 204, 'name' => 'Шестерня'],
+        ['id' => 205, 'name' => 'Подшипник'],
+        ['id' => 206, 'name' => 'Втулка'],
+        ['id' => 207, 'name' => 'Фланец'],
+        ['id' => 208, 'name' => 'Кронштейн']
+    ];
+    
+    // Создаем тестовые сделки
+    $deals = [501, 502, 503, 504, 505];
+    
+    // Создаем тестовые задачи
+    $tasks = [
+        ['id' => 301, 'link' => 'https://example.com/task/301'],
+        ['id' => 302, 'link' => 'https://example.com/task/302'],
+        ['id' => 303, 'link' => 'https://example.com/task/303'],
+        ['id' => 304, 'link' => 'https://example.com/task/304'],
+        ['id' => 305, 'link' => 'https://example.com/task/305']
+    ];
+    
+    // Генерируем случайные даты в диапазоне 2024-2025 годов
+    $startDate = new DateTime('2024-01-01');
+    $endDate = new DateTime('2025-12-31');
+    $startTimestamp = $startDate->getTimestamp();
+    $endTimestamp = $endDate->getTimestamp();
+    
+    // Создаем 30 тестовых записей
+    $createdCount = 0;
+    
+    for ($i = 0; $i < 30; $i++) {
+        // Выбираем случайные значения из массивов
+        $user = $users[array_rand($users)];
+        $operation = $operations[array_rand($operations)];
+        $detail = $details[array_rand($details)];
+        $deal = $deals[array_rand($deals)];
+        $task = $tasks[array_rand($tasks)];
+        
+        // Генерируем случайные значения для количества и цены
+        $quantity = rand(1, 100);
+        $price = rand(500, 10000);
+        
+        // Создаем случайную дату
+        $randomTimestamp = rand($startTimestamp, $endTimestamp);
+        $randomDate = new DateTime();
+        $randomDate->setTimestamp($randomTimestamp);
+        
+        // Создаем запись в журнале
+        $operationLog = new \App\Entities\OperationLog(
+            $task['link'],
+            $task['id'],
+            $deal,
+            $detail['id'],
+            $detail['name'],
+            $quantity,
+            $user['name'],
+            $user['id'],
+            $price,
+            $operation
+        );
+        
+        // Устанавливаем случайную дату создания
+        $reflection = new ReflectionClass($operationLog);
+        $createdDateProperty = $reflection->getProperty('createdDate');
+        $createdDateProperty->setAccessible(true);
+        $createdDateProperty->setValue($operationLog, $randomDate);
+        
+        $entityManager->persist($operationLog);
+        $createdCount++;
+    }
+    
+    $entityManager->flush();
+    
+    $response->getBody()->write(json_encode([
+        'success' => true,
+        'message' => "Создано $createdCount тестовых записей в журнале операций"
+    ]));
+    
+    return $response->withHeader('Content-Type', 'application/json');
 });
 
 $app->get('/test', function (Request $request, Response $response, $args) use ($container) {
