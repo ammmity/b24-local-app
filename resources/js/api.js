@@ -2,7 +2,7 @@
 import axios from 'axios';
 
 const apiClient = axios.create({
-    // baseURL: 'http://furama-goods.local:9995/api',
+    // baseURL: 'http://furama-goods.local:9995/api', //prod
     baseURL: '/api',
     headers: {
         'Content-Type': 'application/json',
