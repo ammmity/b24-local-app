@@ -39,7 +39,7 @@ html, body {
   width: 100%;
 }
 
-#app {
+#productionApp {
   height: 100%;
   width: 100% !important; /* Принудительно установить полную ширину */
   max-width: none !important; /* Убрать ограничение максимальной ширины */
