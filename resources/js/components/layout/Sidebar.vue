@@ -4,32 +4,48 @@
     class="sidebar-menu"
     :collapse="isCollapse"
   >
-    <el-menu-item index="/app/" @click="$router.push('/app/')">
+    <el-menu-item index="/" @click="$router.push('/')">
       <el-icon><DataLine /></el-icon>
       <template #title>Главная</template>
     </el-menu-item>
 
-    <el-menu-item v-if="dealId" index="/app/deal-production-scheme/" @click="$router.push('/app/deal-production-scheme/')">
+    <el-menu-item
+      v-if="dealId"
+      :index="basePath + 'deal-production-scheme'"
+      @click="$router.push(basePath + 'deal-production-scheme')"
+    >
       <el-icon><Tickets /></el-icon>
       <template #title>Процесс производства</template>
     </el-menu-item>
 
-    <el-menu-item index="/app/operation-logs" @click="$router.push('/app/operation-logs/')">
+    <el-menu-item
+      :index="basePath + 'operation-logs'"
+      @click="$router.push(basePath + 'operation-logs')"
+    >
       <el-icon><List /></el-icon>
       <template #title>Журнал работ</template>
     </el-menu-item>
 
-    <el-menu-item index="/app/details/" @click="$router.push('/app/details/')">
+    <el-menu-item
+      :index="basePath + 'details'"
+      @click="$router.push(basePath + 'details')"
+    >
       <el-icon><Tickets /></el-icon>
       <template #title>Комплектующие</template>
     </el-menu-item>
 
-    <el-menu-item index="/app/operation-types/" @click="$router.push('/app/operation-types/')">
+    <el-menu-item
+      :index="basePath + 'operation-types'"
+      @click="$router.push(basePath + 'operation-types')"
+    >
       <el-icon><Setting /></el-icon>
       <template #title>Типы операций</template>
     </el-menu-item>
 
-    <el-menu-item index="/app/operation-prices" @click="$router.push('/app/operation-prices/')">
+    <el-menu-item
+      :index="basePath + 'operation-prices'"
+      @click="$router.push(basePath + 'operation-prices')"
+    >
       <el-icon><PriceTag /></el-icon>
       <template #title>Цены операций</template>
     </el-menu-item>
@@ -62,12 +78,19 @@ export default defineComponent({
     const isCollapse = ref(false);
     const dealId = inject('dealId');
 
-    const activeRoute = computed(() => route.path);
+    // Получаем базовый путь из env
+    const basePath = computed(() => import.meta.env.DEV ? import.meta.env.VITE_APP_BASE_PATH : import.meta.env.VITE_APP_BASE_PATH + 'app/');
+
+    // Обновляем activeRoute с учетом базового пути
+    const activeRoute = computed(() => {
+      return route.path.replace(basePath.value, '');
+    });
 
     return {
       isCollapse,
       activeRoute,
-      dealId
+      dealId,
+      basePath
     };
   }
 });

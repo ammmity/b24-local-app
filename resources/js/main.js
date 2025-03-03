@@ -9,7 +9,7 @@ import 'element-plus/dist/index.css'; // Импорт стилей
 const app = createApp(App);
 
 // Получение переменной из атрибута && Передача переменной в корневой компонент через provide
-const appElement = document.getElementById('app');
+const appElement = document.getElementById('productionApp');
 const dealId = appElement.getAttribute('data-deal-id');
 app.provide('dealId', dealId);
 
@@ -17,4 +17,4 @@ app.use(router);
 app.use(ElementPlus);
 
 // Монтирование приложения
-app.mount('#app');
+app.mount('#productionApp');
