@@ -22,7 +22,7 @@
           type="warning"
           :loading="isLoadingStatuses"
           @click="loadOperationStatuses"
-          :disabled="productionScheme?.status !== 'progress'"
+          :disabled="productionScheme?.status === 'done' || productionScheme?.status !== 'progress'"
           plain
         >
           Получить актуальные статусы операций
@@ -32,7 +32,7 @@
           type="primary"
           :loading="isSaving"
           @click="saveProductionScheme"
-          :disabled="hasErrors || !tableData.length"
+          :disabled="hasErrors || !tableData.length || productionScheme?.status === 'done'"
         >
           {{ productionScheme ? 'Обновить производство' : 'Создать производство' }}
         </el-button>
@@ -42,7 +42,7 @@
           type="success"
           :loading="isStarting"
           @click="startProduction"
-          :disabled="hasErrors || !tableData.length || !allExecutorsAssigned"
+          :disabled="hasErrors || !tableData.length || !allExecutorsAssigned || productionScheme?.status === 'done'"
         >
           Запустить производство
         </el-button>
@@ -94,7 +94,6 @@
         </el-table-column>
         <el-table-column
           label="Исполнитель"
-
         >
           <template #default="{ row }">
             <el-select
@@ -105,7 +104,7 @@
               :remote-method="remoteSearch"
               :loading="loading"
               size="small"
-              :disabled="productionScheme?.status === 'progress'"
+              :disabled="productionScheme?.status === 'done' || productionScheme?.status === 'progress'"
             >
               <el-option
                 v-for="item in executors"
@@ -128,7 +127,7 @@
               :remote-method="remoteSearch"
               :loading="loading"
               size="small"
-              :disabled="!productionScheme"
+              :disabled="!productionScheme || productionScheme?.status === 'done'"
               @change="handleTransferChange(row)"
             >
               <el-option
