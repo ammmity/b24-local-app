@@ -10,11 +10,11 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 
 class DealsController {
-    const PRODUCTS_CATALOG_IBLOCK_ID = 15;
-    const PRODUCTS_CATALOG_SECTION_ID = 11;
-    const PRODUCT_PARTS_CATALOG_IBLOCK_ID = 15;
-    const PRODUCT_PARTS_CATALOG_SECTION_ID = 9;
-    const PRODUCT_PARTS_PROP_ID = 53;
+    const PRODUCTS_CATALOG_IBLOCK_ID = 14;
+    const PRODUCTS_CATALOG_SECTION_ID = 13;
+    const PRODUCT_PARTS_CATALOG_IBLOCK_ID = 14;
+    const PRODUCT_PARTS_CATALOG_SECTION_ID = 15;
+    const PRODUCT_PARTS_PROP_ID = 64;
 
 
     public function __construct(
@@ -48,6 +48,16 @@ class DealsController {
             foreach ($dealProducts as $k => $dealProduct) {
                 $productRaw = $this->CRestService->callMethod('catalog.product.get', ['id' => $dealProduct['PRODUCT_ID']]);
                 $product = $productRaw['result']['product'];
+
+
+                if (isset($product['parentId'])) { // Если товар унаследован - возьмем детали из корневого товара TODO: wtf... найти решение
+                    $parentProductRaw = $this->CRestService->callMethod('catalog.product.get', ['id' => $product['parentId']['value']]);
+                    $parentProduct = isset($parentProductRaw['result']) ? $parentProductRaw['result']['product'] : null;
+                    if (isset($parentProduct['property'.self::PRODUCT_PARTS_PROP_ID])) {
+                        $product['property'.self::PRODUCT_PARTS_PROP_ID] = $parentProduct['property'.self::PRODUCT_PARTS_PROP_ID];
+                    }
+                }
+
                 $deal['dealProducts'][$k]['product'] = $product;
 
                 // Инициализируем массивы для частей

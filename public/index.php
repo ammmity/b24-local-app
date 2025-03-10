@@ -1,6 +1,6 @@
 <?php
-
 use App\Entities\BitrixGroupKanbanStage;
+use App\Entities\ProductionSchemeStage;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\DriverManager;
 use Doctrine\ORM\EntityManagerInterface;
@@ -38,6 +38,8 @@ use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\Mapping\Driver\AttributeDriver;
 
 require __DIR__ . '/../vendor/autoload.php';
+
+define('C_REST_IGNORE_SSL', true);//turn off validate ssl by curl
 
 $container = new DI\Container([
     SettingsInterface::class => function () {
@@ -99,6 +101,8 @@ $app->add(TwigMiddleware::create($app, $twig));
 $app->add(JsonResponseMiddleware::class);
 $app->add(CorsResponseMiddleware::class);
 
+$app->setBasePath('/production-app/public');
+
 // Routes
 $app->group('/app/', function (RouteCollectorProxy $group) {
     $group->any('', [AppController::class, 'dashboard'])->setName('dashboard');
@@ -156,14 +160,14 @@ $app->group('/api/', function (RouteCollectorProxy $group) {
 
 $app->get('/fill-log', function (Request $request, Response $response, $args) use ($container) {
     $entityManager = $container->get(EntityManagerInterface::class);
-    
+
     // Создаем тестовых пользователей
     $users = [
         ['id' => 101, 'name' => 'Иванов Иван'],
         ['id' => 102, 'name' => 'Петров Петр'],
         ['id' => 103, 'name' => 'Сидорова Анна']
     ];
-    
+
     // Создаем тестовые операции
     $operations = [
         'Фрезеровка',
@@ -175,7 +179,7 @@ $app->get('/fill-log', function (Request $request, Response $response, $args) us
         'Полировка',
         'Контроль качества'
     ];
-    
+
     // Создаем тестовые детали
     $details = [
         ['id' => 201, 'name' => 'Корпус'],
@@ -187,10 +191,10 @@ $app->get('/fill-log', function (Request $request, Response $response, $args) us
         ['id' => 207, 'name' => 'Фланец'],
         ['id' => 208, 'name' => 'Кронштейн']
     ];
-    
+
     // Создаем тестовые сделки
     $deals = [501, 502, 503, 504, 505];
-    
+
     // Создаем тестовые задачи
     $tasks = [
         ['id' => 301, 'link' => 'https://example.com/task/301'],
@@ -199,16 +203,16 @@ $app->get('/fill-log', function (Request $request, Response $response, $args) us
         ['id' => 304, 'link' => 'https://example.com/task/304'],
         ['id' => 305, 'link' => 'https://example.com/task/305']
     ];
-    
+
     // Генерируем случайные даты в диапазоне 2024-2025 годов
     $startDate = new DateTime('2024-01-01');
     $endDate = new DateTime('2025-12-31');
     $startTimestamp = $startDate->getTimestamp();
     $endTimestamp = $endDate->getTimestamp();
-    
+
     // Создаем 30 тестовых записей
     $createdCount = 0;
-    
+
     for ($i = 0; $i < 30; $i++) {
         // Выбираем случайные значения из массивов
         $user = $users[array_rand($users)];
@@ -216,16 +220,16 @@ $app->get('/fill-log', function (Request $request, Response $response, $args) us
         $detail = $details[array_rand($details)];
         $deal = $deals[array_rand($deals)];
         $task = $tasks[array_rand($tasks)];
-        
+
         // Генерируем случайные значения для количества и цены
         $quantity = rand(1, 100);
         $price = rand(500, 10000);
-        
+
         // Создаем случайную дату
         $randomTimestamp = rand($startTimestamp, $endTimestamp);
         $randomDate = new DateTime();
         $randomDate->setTimestamp($randomTimestamp);
-        
+
         // Создаем запись в журнале
         $operationLog = new \App\Entities\OperationLog(
             $task['link'],
@@ -239,28 +243,40 @@ $app->get('/fill-log', function (Request $request, Response $response, $args) us
             $price,
             $operation
         );
-        
+
         // Устанавливаем случайную дату создания
         $reflection = new ReflectionClass($operationLog);
         $createdDateProperty = $reflection->getProperty('createdDate');
         $createdDateProperty->setAccessible(true);
         $createdDateProperty->setValue($operationLog, $randomDate);
-        
+
         $entityManager->persist($operationLog);
         $createdCount++;
     }
-    
+
     $entityManager->flush();
-    
+
     $response->getBody()->write(json_encode([
         'success' => true,
         'message' => "Создано $createdCount тестовых записей в журнале операций"
     ]));
-    
+
     return $response->withHeader('Content-Type', 'application/json');
 });
 
 $app->get('/test', function (Request $request, Response $response, $args) use ($container) {
+//    $entityManager = $container->get(EntityManagerInterface::class);
+//    $nextStage = $entityManager->getRepository(ProductionSchemeStage::class)
+//        ->findOneBy(['productPart' => 1, 'stageNumber' => 2]);
+//
+//    $response->getBody()->write(json_encode($nextStage->toArray()));
+//    return $response;
+
+    $cRestService = $container->get(CRestService::class);
+    $result = $cRestService->callMethod('event.get');
+    $response->getBody()->write(json_encode($result));
+    return $response;
+
     $cRestService = $container->get(CRestService::class);
     $entityManager = $container->get(EntityManagerInterface::class);
     $currentUser = $cRestService->currentUser();
