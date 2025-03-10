@@ -10,6 +10,11 @@ class CRestService
         return CRest::call($method, $params);
     }
 
+    public function installApp($request)
+    {
+        return CRest::installApp($request);
+    }
+
     public function addTask($params)
     {
         return $this->callMethod('tasks.task.add', $params)['result']['task'];

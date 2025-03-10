@@ -103,6 +103,7 @@ class CRest
                 curl_setopt($obCurl, CURLOPT_RETURNTRANSFER, true);
                 curl_setopt($obCurl, CURLOPT_POSTREDIR, 10);
                 curl_setopt($obCurl, CURLOPT_USERAGENT, 'Bitrix24 CRest PHP ' . static::VERSION);
+
                 if ($sPostFields) {
                     curl_setopt($obCurl, CURLOPT_POST, true);
                     curl_setopt($obCurl, CURLOPT_POSTFIELDS, $sPostFields);
