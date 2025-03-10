@@ -48,6 +48,16 @@ class DealsController {
             foreach ($dealProducts as $k => $dealProduct) {
                 $productRaw = $this->CRestService->callMethod('catalog.product.get', ['id' => $dealProduct['PRODUCT_ID']]);
                 $product = $productRaw['result']['product'];
+
+
+                if (isset($product['parentId'])) { // Если товар унаследован - возьмем детали из корневого товара TODO: wtf... найти решение
+                    $parentProductRaw = $this->CRestService->callMethod('catalog.product.get', ['id' => $product['parentId']['value']]);
+                    $parentProduct = isset($parentProductRaw['result']) ? $parentProductRaw['result']['product'] : null;
+                    if (isset($parentProduct['property'.self::PRODUCT_PARTS_PROP_ID])) {
+                        $product['property'.self::PRODUCT_PARTS_PROP_ID] = $parentProduct['property'.self::PRODUCT_PARTS_PROP_ID];
+                    }
+                }
+
                 $deal['dealProducts'][$k]['product'] = $product;
 
                 // Инициализируем массивы для частей

@@ -80,8 +80,7 @@ class AppController {
         if (!empty($queryParams['id'])) {
             $dealId = $queryParams['id'];
         }
-//        $dealId = 9;
-
+//        $dealId = 13;
 //        $result = $this->CRestService->callMethod('crm.deal.fields',[]);
 //        $products = $this->CRestService->callMethod('crm.deal.productrows.get', ['id' => $dealId]);
 //        $response->getBody()->write('<pre>'. print_r($products, true). '</pre>');
