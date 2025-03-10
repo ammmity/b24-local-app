@@ -2,7 +2,7 @@
   <div>
     <div class="header-actions">
       <div class="content-placeholder">
-        <el-empty description="Раздел находится в разработке"></el-empty>
+        <el-empty description="Главная"></el-empty>
       </div>
     </div>
   </div>
