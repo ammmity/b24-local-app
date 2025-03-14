@@ -4,9 +4,17 @@
     class="sidebar-menu"
     :collapse="isCollapse"
   >
-    <el-menu-item index="/" @click="$router.push('/')">
-      <el-icon><DataLine /></el-icon>
-      <template #title>Главная</template>
+    <el-menu-item :index="basePath" @click="$router.push(basePath)">
+      <el-icon><Goods /></el-icon>
+      <template #title>Товары</template>
+    </el-menu-item>
+
+    <el-menu-item
+      :index="basePath + 'details'"
+      @click="$router.push(basePath + 'details')"
+    >
+      <el-icon><Tickets /></el-icon>
+      <template #title>Комплектующие</template>
     </el-menu-item>
 
     <el-menu-item
@@ -16,22 +24,6 @@
     >
       <el-icon><Tickets /></el-icon>
       <template #title>Процесс производства</template>
-    </el-menu-item>
-
-    <el-menu-item
-      :index="basePath + 'operation-logs'"
-      @click="$router.push(basePath + 'operation-logs')"
-    >
-      <el-icon><List /></el-icon>
-      <template #title>Журнал работ</template>
-    </el-menu-item>
-
-    <el-menu-item
-      :index="basePath + 'details'"
-      @click="$router.push(basePath + 'details')"
-    >
-      <el-icon><Tickets /></el-icon>
-      <template #title>Комплектующие</template>
     </el-menu-item>
 
     <el-menu-item
@@ -50,6 +42,22 @@
       <template #title>Цены операций</template>
     </el-menu-item>
 
+    <el-menu-item
+      :index="basePath + 'operation-logs'"
+      @click="$router.push(basePath + 'operation-logs')"
+    >
+      <el-icon><List /></el-icon>
+      <template #title>Журнал работ</template>
+    </el-menu-item>
+
+    <el-menu-item
+      :index="basePath + 'employee-report'"
+      @click="$router.push(basePath + 'employee-report')"
+    >
+      <el-icon><Document /></el-icon>
+      <template #title>Отчет по сотрудникам</template>
+    </el-menu-item>
+
   </el-menu>
 </template>
 
@@ -61,7 +69,9 @@ import {
   Tickets,
   Setting,
   PriceTag,
-  List
+  List,
+  Goods,
+  Document
 } from '@element-plus/icons-vue';
 
 export default defineComponent({
@@ -71,7 +81,9 @@ export default defineComponent({
     Tickets,
     Setting,
     PriceTag,
-    List
+    List,
+    Goods,
+    Document
   },
   setup() {
     const route = useRoute();

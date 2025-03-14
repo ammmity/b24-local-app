@@ -31,7 +31,9 @@ use App\Controllers\{
     ProductionSchemesController,
     GroupsController,
     B24EventsController,
-    OperationLogsController
+    OperationLogsController,
+    GoodsController,
+    ReportsController
 };
 use Doctrine\ORM\ORMSetup;
 use Doctrine\ORM\EntityManager;
@@ -156,6 +158,18 @@ $app->group('/api/', function (RouteCollectorProxy $group) {
     $group->get('operation-logs/{id}', [OperationLogsController::class, 'get'])->setName('operation-log-resource');
     $group->post('operation-logs', [OperationLogsController::class, 'create'])->setName('add-operation-log');
     $group->get('operation-logs/deal/{dealId}', [OperationLogsController::class, 'getByDealId'])->setName('get-operation-logs-by-deal');
+
+    // Маршруты для товаров
+    $group->get('goods', [GoodsController::class, 'list']);
+    $group->get('goods/{id}', [GoodsController::class, 'get']);
+    $group->post('goods', [GoodsController::class, 'create']);
+    $group->put('goods/{id}', [GoodsController::class, 'update']);
+    $group->delete('goods/{id}', [GoodsController::class, 'delete']);
+    $group->any('goods/import/', [GoodsController::class, 'import']);
+
+    // Отчеты
+    $group->get('reports/employee-operations', [ReportsController::class, 'employeeOperations'])->setName('employee-operations-report');
+    $group->get('reports/operation-users', [ReportsController::class, 'getOperationUsers'])->setName('operation-users-report');
 });
 
 $app->get('/fill-log', function (Request $request, Response $response, $args) use ($container) {

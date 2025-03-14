@@ -68,13 +68,13 @@
 
         />
         <el-table-column
-          prop="part"
-          label="Деталь"
+          prop="operation"
+          label="Операция"
 
         />
         <el-table-column
-          prop="operation"
-          label="Операция"
+          prop="part"
+          label="Деталь"
 
         />
         <el-table-column
@@ -193,13 +193,13 @@ export default defineComponent({
 
             rows.push({
               stage: stage.stage || '',
-              product: product.product?.name || 'Неизвестный продукт',
+              product: `${product.product?.name || 'Неизвестный продукт'} (${product.QUANTITY || 1}шт.)`,
               part: part.name || 'Неизвестная деталь',
               part_id: part.id,
               operation: stage.operation_type?.name || 'Неизвестная операция',
               operation_type_id: stage.operation_type_id,
               machine: stage.operation_type?.machine || 'Неизвестная операция',
-              quantity: product.QUANTITY || '',
+              quantity: part.quantity || 0,
               executor: schemeStage?.executor_id?.toString() || '',
               transfer: schemeStage?.transfer_to_id?.toString() || '',
               id: stage.id,
@@ -332,22 +332,25 @@ export default defineComponent({
         }
       }
 
-      // Проверка наличия production_stages в каждой детали (parts) продуктов
+      // Проверка наличия production_stages и количества в каждой детали (parts) продуктов
       if (deal.value && deal.value.dealProducts && deal.value.dealProducts.length > 0) {
         deal.value.dealProducts.forEach(product => {
           if (product.parts && product.parts.length > 0) {
-            const partsWithoutStages = product.parts.filter(
-              part => !part.production_stages || part.production_stages.length === 0
-            );
-
-            if (partsWithoutStages.length > 0) {
-              const productName = product.product.name || product.product.title || product.product.id || 'Неизвестный продукт';
-
-              partsWithoutStages.forEach(part => {
-                const partName = part.name || part.title || part.id || 'Неизвестная деталь';
+            const productName = product.product.name || product.product.title || product.product.id || 'Неизвестный продукт';
+            
+            product.parts.forEach(part => {
+              const partName = part.name || part.title || part.id || 'Неизвестная деталь';
+              
+              // Проверка количества
+              if (part.quantity === 0) {
+                errors.value.push(`Для детали "${partName}" продукта "${productName}" не установлено количество`);
+              }
+              
+              // Проверка наличия этапов производства
+              if (!part.production_stages || part.production_stages.length === 0) {
                 errors.value.push(`У детали "${partName}" продукта "${productName}" отсутствуют этапы производства`);
-              });
-            }
+              }
+            });
           }
         });
       }

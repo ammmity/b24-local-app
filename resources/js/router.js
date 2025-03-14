@@ -2,6 +2,8 @@ import { createRouter, createWebHistory } from 'vue-router';
 import AppLayout from './components/layout/AppLayout.vue';
 import Dashboard from './components/views/Dashboard.vue';
 import Settings from './components/views/Settings.vue';
+import Goods from './components/views/Goods.vue'    
+import EmployeeReport from './components/views/EmployeeReport.vue'
 
 // Получаем базовый путь из env
 const basePath = import.meta.env.VITE_APP_BASE_PATH || '/production-app/public/app/';
@@ -13,8 +15,8 @@ const routes = [
         children: [
             {
                 path: '',
-                name: 'Dashboard',
-                component: () => import('./components/views/Dashboard.vue')
+                name: 'goods',
+                component: () => import('./components/views/Goods.vue')
             },
             {
                 path: 'details',
@@ -50,6 +52,11 @@ const routes = [
                 path: 'operation-logs',
                 name: 'operation-logs',
                 component: () => import('./components/views/OperationLogs.vue')
+            },
+            {
+                path: 'employee-report',
+                name: 'employee-report',
+                component: () => import('./components/views/EmployeeReport.vue')
             },
         ]
     }

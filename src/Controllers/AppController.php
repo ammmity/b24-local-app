@@ -13,6 +13,9 @@ use Twig\Error\RuntimeError;
 use Twig\Error\SyntaxError;
 
 class AppController {
+//    public const TEHNOLOG_DEPARTMENT_ID = 1;
+    public const TEHNOLOG_DEPARTMENT_ID = 16;
+
     /**
      * @throws \Exception
      */
@@ -30,38 +33,13 @@ class AppController {
     public function dashboard(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
     {
 
-
-//
-//        if (empty($args['find'])) {
-//            $args['find'] = 'teh';
-//        }
-//
-//        $filter = [];
-//        if (!empty($args['find'])) {
-//            $filter['FIND'] = "%{$args['find']}%";
-//        }
-
-//        if (empty($filter)) {
-//            // return error
-//        }
-
-//
-//        $users = $this->CRestService->callMethod('user.search',
-//            [
-//                'filter' => $filter
-//            ]
-//        )['result'];
-//
-//        if (!empty($users)) {
-//            $users = array_map(fn($user) => [
-//                'id' => $user['ID'],
-//                'name' => $user['NAME'],
-//                'last_name' => $user['LAST_NAME']
-//            ], $users);
-//        }
-
+        $currentUser = $this->CRestService->currentUser();
+        $areUserTehnolog = in_array(self::TEHNOLOG_DEPARTMENT_ID, $currentUser['UF_DEPARTMENT']);
+//        $areUserTehnolog = true;
         $view = Twig::fromRequest($request);
-        return $view->render($response, 'app.html.twig');
+        return $view->render($response, 'app.html.twig', [
+            'areUserTehnolog' => $areUserTehnolog,
+        ]);
     }
 
     public function dealProductionScheme(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
@@ -80,7 +58,12 @@ class AppController {
         if (!empty($queryParams['id'])) {
             $dealId = $queryParams['id'];
         }
-//        $dealId = 13;
+
+        $currentUser = $this->CRestService->currentUser();
+        $areUserTehnolog = in_array(self::TEHNOLOG_DEPARTMENT_ID, $currentUser['UF_DEPARTMENT']);
+//        $areUserTehnolog = true;
+
+        $dealId = 9;
 //        $result = $this->CRestService->callMethod('crm.deal.fields',[]);
 //        $products = $this->CRestService->callMethod('crm.deal.productrows.get', ['id' => $dealId]);
 //        $response->getBody()->write('<pre>'. print_r($products, true). '</pre>');
@@ -88,6 +71,7 @@ class AppController {
 
         $view = Twig::fromRequest($request);
         return $view->render($response, 'deal-production-scheme.html.twig', [
+            'areUserTehnolog' => $areUserTehnolog,
             'dealId' => $dealId
         ]);
     }
