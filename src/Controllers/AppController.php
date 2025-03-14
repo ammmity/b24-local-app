@@ -63,7 +63,7 @@ class AppController {
         $areUserTehnolog = in_array(self::TEHNOLOG_DEPARTMENT_ID, $currentUser['UF_DEPARTMENT']);
 //        $areUserTehnolog = true;
 
-        $dealId = 9;
+//        $dealId = 9;
 //        $result = $this->CRestService->callMethod('crm.deal.fields',[]);
 //        $products = $this->CRestService->callMethod('crm.deal.productrows.get', ['id' => $dealId]);
 //        $response->getBody()->write('<pre>'. print_r($products, true). '</pre>');

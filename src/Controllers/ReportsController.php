@@ -42,6 +42,7 @@ class ReportsController
                 'date' => $operation->getCreatedDate()->format('Y-m-d H:i:s'),
                 'employee' => $operation->getUsername(),
                 'detail' => $operation->getDetailName(),
+                'operation' => $operation->getOperation(),
                 'quantity' => $operation->getQuantity(),
                 'price' => $operation->getPrice(),
                 'amount' => $operation->getPrice() * $operation->getQuantity()

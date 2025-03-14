@@ -120,6 +120,7 @@ export default defineComponent({
         'Дата': item.date,
         'Сотрудник': item.employee,
         'Деталь': item.detail,
+        'Операция': item.operation,
         'Количество': item.quantity,
         'Цена': item.price,
         'Сумма': item.amount
