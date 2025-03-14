@@ -1,13 +1,11 @@
-// src/api.js
 import axios from 'axios';
 
 const apiClient = axios.create({
-    // baseURL: 'http://furama-goods.local:9995/api',
-    baseURL: '/api',
+    baseURL: import.meta.env.DEV ? '/api' : import.meta.env.VITE_APP_API_URL,
     headers: {
         'Content-Type': 'application/json',
     },
-    withCredentials: true,
+    // withCredentials: true,
 });
 
 // Добавьте интерсепторы, если необходимо

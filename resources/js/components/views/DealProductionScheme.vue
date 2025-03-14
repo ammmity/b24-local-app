@@ -1,6 +1,6 @@
 <template>
   <div v-if="deal && !hasErrors">
-    <h2>Схема производства</h2>
+    <h3>Схема производства</h3>
 
     <el-card class="deal-info-card">
       <el-descriptions :column="2" border>
@@ -22,7 +22,7 @@
           type="warning"
           :loading="isLoadingStatuses"
           @click="loadOperationStatuses"
-          :disabled="productionScheme?.status !== 'progress'"
+          :disabled="productionScheme?.status === 'done' || productionScheme?.status !== 'progress'"
           plain
         >
           Получить актуальные статусы операций
@@ -32,7 +32,7 @@
           type="primary"
           :loading="isSaving"
           @click="saveProductionScheme"
-          :disabled="hasErrors || !tableData.length"
+          :disabled="hasErrors || !tableData.length || productionScheme?.status === 'done'"
         >
           {{ productionScheme ? 'Обновить производство' : 'Создать производство' }}
         </el-button>
@@ -42,7 +42,7 @@
           type="success"
           :loading="isStarting"
           @click="startProduction"
-          :disabled="hasErrors || !tableData.length || !allExecutorsAssigned"
+          :disabled="hasErrors || !tableData.length || !allExecutorsAssigned || productionScheme?.status === 'done'"
         >
           Запустить производство
         </el-button>
@@ -68,13 +68,13 @@
 
         />
         <el-table-column
-          prop="part"
-          label="Деталь"
+          prop="operation"
+          label="Операция"
 
         />
         <el-table-column
-          prop="operation"
-          label="Операция"
+          prop="part"
+          label="Деталь"
 
         />
         <el-table-column
@@ -83,8 +83,17 @@
 
         />
         <el-table-column
+          v-if="productionScheme?.status === 'progress'"
+          prop="status"
+          label="Статус"
+        >
+          <template #default="{ row }">
+            <span v-if="row.status !== '0'" :class="getStatusClass(row.status)">{{ row.status }}</span>
+            <span v-else></span>
+          </template>
+        </el-table-column>
+        <el-table-column
           label="Исполнитель"
-
         >
           <template #default="{ row }">
             <el-select
@@ -95,7 +104,7 @@
               :remote-method="remoteSearch"
               :loading="loading"
               size="small"
-              :disabled="productionScheme?.status === 'progress'"
+              :disabled="productionScheme?.status === 'done' || productionScheme?.status === 'progress'"
             >
               <el-option
                 v-for="item in executors"
@@ -118,7 +127,8 @@
               :remote-method="remoteSearch"
               :loading="loading"
               size="small"
-              :disabled="!productionScheme"
+              :disabled="!productionScheme || productionScheme?.status === 'done'"
+              @change="handleTransferChange(row)"
             >
               <el-option
                 v-for="item in executors"
@@ -132,21 +142,6 @@
       </el-table>
     </div>
 
-    <h2>{{ deal.TITLE }}</h2>
-    <p>dealId: {{ dealId }}</p>
-    <p>Сумма: {{ deal.OPPORTUNITY }}</p>
-
-    <div class="products-container">
-    <div v-for="(item, index) in deal.dealProducts" :key="index" class="product-card">
-      <div class="product-header">ID: {{ item.ID }}</div>
-      <div class="product-details">
-        <div v-for="(value, key) in item" :key="key" class="detail-row">
-          <span class="detail-label">{{ key }}:</span>
-          <span class="detail-value">{{ value !== null ? value : 'Нет значения' }}</span>
-        </div>
-      </div>
-    </div>
-  </div>
   </div>
   <div v-else>
     <div v-if="errors.length > 0" class="error-container">
@@ -198,16 +193,17 @@ export default defineComponent({
 
             rows.push({
               stage: stage.stage || '',
-              product: product.product?.name || 'Неизвестный продукт',
+              product: `${product.product?.name || 'Неизвестный продукт'} (${product.QUANTITY || 1}шт.)`,
               part: part.name || 'Неизвестная деталь',
               part_id: part.id,
               operation: stage.operation_type?.name || 'Неизвестная операция',
               operation_type_id: stage.operation_type_id,
               machine: stage.operation_type?.machine || 'Неизвестная операция',
-              quantity: product.QUANTITY || '',
+              quantity: part.quantity || 0,
               executor: schemeStage?.executor_id?.toString() || '',
               transfer: schemeStage?.transfer_to_id?.toString() || '',
-              id: stage.id
+              id: stage.id,
+              status: schemeStage?.status || ''
             });
           });
         });
@@ -336,22 +332,25 @@ export default defineComponent({
         }
       }
 
-      // Проверка наличия production_stages в каждой детали (parts) продуктов
+      // Проверка наличия production_stages и количества в каждой детали (parts) продуктов
       if (deal.value && deal.value.dealProducts && deal.value.dealProducts.length > 0) {
         deal.value.dealProducts.forEach(product => {
           if (product.parts && product.parts.length > 0) {
-            const partsWithoutStages = product.parts.filter(
-              part => !part.production_stages || part.production_stages.length === 0
-            );
-
-            if (partsWithoutStages.length > 0) {
-              const productName = product.product.name || product.product.title || product.product.id || 'Неизвестный продукт';
-
-              partsWithoutStages.forEach(part => {
-                const partName = part.name || part.title || part.id || 'Неизвестная деталь';
+            const productName = product.product.name || product.product.title || product.product.id || 'Неизвестный продукт';
+            
+            product.parts.forEach(part => {
+              const partName = part.name || part.title || part.id || 'Неизвестная деталь';
+              
+              // Проверка количества
+              if (part.quantity === 0) {
+                errors.value.push(`Для детали "${partName}" продукта "${productName}" не установлено количество`);
+              }
+              
+              // Проверка наличия этапов производства
+              if (!part.production_stages || part.production_stages.length === 0) {
                 errors.value.push(`У детали "${partName}" продукта "${productName}" отсутствуют этапы производства`);
-              });
-            }
+              }
+            });
           }
         });
       }
@@ -373,6 +372,7 @@ export default defineComponent({
         operation_type_id: row.operation_type_id,
         stage_number: row.stage,
         quantity: row.quantity,
+        status: row.status,
         executor_id: row.transfer ? parseInt(row.transfer) : (row.executor ? parseInt(row.executor) : null),
         transfer_to_id: row.transfer ? parseInt(row.transfer) : null
       }));
@@ -407,6 +407,16 @@ export default defineComponent({
       if (!productionScheme.value) return 'Стандартный';
       return productionScheme.value.type === 'important' ? 'Важный' : 'Стандартный';
     });
+
+    const getStatusClass = (status) => {
+      switch (status) {
+        case 'В ожидании': return 'status-default';
+        case 'Завершены': return 'status-done';
+        case 'В работе': return 'status-in-progress';
+        case 'Нет сырья': return 'status-error';
+        default: return 'status-default';
+      }
+    };
 
     const saveProductionScheme = async () => {
       try {
@@ -476,7 +486,8 @@ export default defineComponent({
     const loadOperationStatuses = async () => {
       try {
         isLoadingStatuses.value = true;
-        await fetchProductionScheme(dealId);
+        const response = await apiClient.get(`/production-schemes/${dealId}/sync`);
+        productionScheme.value = response.data;
 
         ElMessage({
           type: 'success',
@@ -490,6 +501,12 @@ export default defineComponent({
         });
       } finally {
         isLoadingStatuses.value = false;
+      }
+    };
+
+    const handleTransferChange = (row) => {
+      if (row.transfer) {
+        row.executor = row.transfer;
       }
     };
 
@@ -549,6 +566,8 @@ export default defineComponent({
       startProduction,
       isLoadingStatuses,
       loadOperationStatuses,
+      handleTransferChange,
+      getStatusClass,
     };
   },
 });
@@ -659,5 +678,29 @@ export default defineComponent({
   display: flex;
   gap: 10px;
   justify-content: flex-end;
+}
+
+.status-done {
+  color: #67c23a;
+  font-weight: bold;
+}
+
+.status-in-progress {
+  color: #409eff;
+  font-weight: bold;
+}
+
+.status-waiting {
+  color: #e6a23c;
+  font-weight: bold;
+}
+
+.status-error {
+  color: #f56c6c;
+  font-weight: bold;
+}
+
+.status-default {
+  color: #909399;
 }
 </style>

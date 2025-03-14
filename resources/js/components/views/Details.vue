@@ -1,6 +1,17 @@
 <template>
   <div>
+    <h3>Комплектующие</h3>
     <div class="header-actions">
+      <div class="sync-container">
+        <el-button
+          type="primary"
+          @click="syncProducts"
+          :loading="isSyncing"
+        >
+          Синхронизировать комплектующие
+        </el-button>
+      </div>
+
       <el-input
         v-model="searchQuery"
         placeholder="Поиск комплектующих"
@@ -66,6 +77,7 @@ export default defineComponent({
     const searchQuery = ref('');
     const showProductionModal = ref(false);
     const selectedProductId = ref(null);
+    const isSyncing = ref(false);
 
     const fetchProductParts = async () => {
       try {
@@ -86,6 +98,19 @@ export default defineComponent({
         productParts.value = response.data;
       } catch (err) {
         error.value = 'Ошибка при поиске данных: ' + err.message;
+      }
+    };
+
+    const syncProducts = async () => {
+      isSyncing.value = true;
+      try {
+        await apiClient.get('/product-parts/import/');
+        ElMessage.success('Синхронизация успешно завершена');
+        await fetchProductParts(); // Обновляем список после синхронизации
+      } catch (error) {
+        ElMessage.error('Ошибка при синхронизации: ' + (error.response?.data?.error || error.message));
+      } finally {
+        isSyncing.value = false;
       }
     };
 
@@ -120,6 +145,8 @@ export default defineComponent({
       selectedProductId,
       openProductionModal,
       handleProductionSuccess,
+      syncProducts,
+      isSyncing,
       error
     };
   }
@@ -131,6 +158,11 @@ export default defineComponent({
   display: flex;
   gap: 16px;
   margin-bottom: 20px;
+}
+
+.sync-container {
+  display: flex;
+  align-items: center;
 }
 
 .error-message {

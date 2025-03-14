@@ -1,7 +1,7 @@
 <template>
   <el-container class="app-container">
     <el-aside width="auto">
-      <Sidebar v-if="!dealId" />
+      <Sidebar v-if="!dealId"/>
     </el-aside>
     <el-container>
       <el-main>
@@ -39,7 +39,7 @@ html, body {
   width: 100%;
 }
 
-#app {
+#productionApp {
   height: 100%;
   width: 100% !important; /* Принудительно установить полную ширину */
   max-width: none !important; /* Убрать ограничение максимальной ширины */

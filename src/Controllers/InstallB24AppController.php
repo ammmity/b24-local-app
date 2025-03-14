@@ -1,6 +1,7 @@
 <?php
 namespace App\Controllers;
 
+use App\Services\CRestService;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Slim\Views\Twig;
@@ -15,7 +16,7 @@ class InstallB24AppController {
      * @throws \Exception
      */
     public function __construct(
-        protected CRest $CRest
+        private CRestService $CRestService
     )
     {}
 
@@ -26,10 +27,9 @@ class InstallB24AppController {
      */
     public function install(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
     {
-        $install_result = $this->CRest::installApp($request);
+        $install_result = $this->CRestService->installApp($request);
         $view = Twig::fromRequest($request);
-//        $response->getBody()->write(print_r((array)$request->getCookieParams(), true));
-//        return $response;
+        
         return $view->render($response, 'install-b24-app.html.twig', [
             'install_result' => $install_result
         ]);

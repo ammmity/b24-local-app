@@ -47,7 +47,7 @@ class ProductProductionStagesController
             $stages
         )));
 
-        return $response->withHeader('Content-Type', 'application/json');
+        return $response;
     }
 
     public function store(Request $request, Response $response): Response

@@ -2,10 +2,13 @@
 
 namespace App\Controllers;
 
+use App\Entities\BitrixGroupKanbanStage;
 use App\Entities\ProductionScheme;
 use App\Entities\ProductionSchemeStage;
 use App\Entities\ProductPart;
 use App\Entities\OperationType;
+use App\Services\CRestService;
+use App\Services\ProductionSchemeService;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
@@ -13,7 +16,9 @@ use Psr\Http\Message\ServerRequestInterface as Request;
 class ProductionSchemesController
 {
     public function __construct(
-        private EntityManagerInterface $entityManager
+        protected EntityManagerInterface $entityManager,
+        protected CRestService $CRestService,
+        protected ProductionSchemeService $productionSchemeService,
     ) {}
 
     public function get(Request $request, Response $response, array $args): Response
@@ -35,7 +40,7 @@ class ProductionSchemesController
 
         // Принудительно инициализируем коллекцию этапов
         // $scheme->getStages()->toArray();
-        
+
         // Получаем свежие данные
         // $this->entityManager->refresh($scheme);
 
@@ -119,6 +124,8 @@ class ProductionSchemesController
             return $response->withStatus(400)->withHeader('Content-Type', 'application/json');
         }
 
+        $currentUser = $this->CRestService->currentUser();
+
         $scheme = $this->entityManager->getRepository(ProductionScheme::class)
             ->findOneBy(['dealId' => $dealId]);
 
@@ -129,8 +136,14 @@ class ProductionSchemesController
 
         $data = json_decode($request->getBody()->getContents(), true);
 
-        if (isset($data['status']) && $data['status'] === 'progress') {
+        // Запустить производство
+        if (
+            isset($data['status'])
+            && $data['status'] === 'progress'
+            && !isset($data['stages'])
+        ) {
             // Проверяем, что все этапы имеют исполнителей
+            /** @var ProductionSchemeStage $stage */
             foreach ($scheme->getStages() as $stage) {
                 if (!$stage->getExecutorId()) {
                     $response->getBody()->write(json_encode([
@@ -138,11 +151,36 @@ class ProductionSchemesController
                     ]));
                     return $response;
                 }
-            }
-        }
 
-        if (isset($data['status'])) {
-            $scheme->setStatus($data['status']);
+                // При создании производства, к стадиям порядка 1 создаются задачи
+                if ($stage->getStageNumber() == 1) {
+                    $title = $stage->toArray()['operation_type']['name']
+                        . ' / ' . $stage->toArray()['product_part']['name']
+                        . ' / ' . $stage->toArray()['quantity'] . 'шт';
+                    $groupId = $stage->toArray()['operation_type']['bitrix_group_id'];
+                    $waitingStage = $this->entityManager->getRepository(BitrixGroupKanbanStage::class)->findOneBy([
+                        'bitrix_group_id' => $groupId,
+                        'stage_name' => 'В ожидании'
+                    ]);
+
+                    $b24Task = $this->CRestService->addTask([
+                        'fields' => [
+                            'TITLE' => $title, // Название задачи
+                            //'DEADLINE' => '2023-12-31T23:59:59', // Крайний срок
+                            'CREATED_BY' => $currentUser['ID'], // Идентификатор постановщика
+                            'RESPONSIBLE_ID' => $stage->getExecutorId(), // Идентификатор исполнителя
+                            'STAGE_ID' => (int) $waitingStage->getStageId(), // Стадия
+                            'GROUP_ID' => $groupId, // Стадия
+                            // Пример передачи нескольких значений в поле UF_CRM_TASK
+                            'UF_CRM_TASK' => [
+                                'D_'.$dealId // Привязка к сделке
+                            ],
+                        ]
+                    ]);
+                    $stage->setBitrixTaskId($b24Task['id']);
+                    $stage->setStatus('В ожидании');
+                }
+            }
         }
 
         if (isset($data['stages']) && is_array($data['stages'])) {
@@ -157,6 +195,18 @@ class ProductionSchemesController
                 if ($stage) {
                     // Обновляем существующий этап
                     if (isset($stageData['executor_id'])) {
+                        if (
+                            $stageData['executor_id'] !== $stage->getExecutorId()
+                            && !empty($stage->getBitrixTaskId())
+                        ) {
+                            $this->CRestService->updateTask([
+                                'taskId' => $stage->getBitrixTaskId(),
+                                'fields' => [
+                                    'RESPONSIBLE_ID' => $stageData['executor_id']
+                                ]
+                            ]);
+
+                        }
                         $stage->setExecutorId($stageData['executor_id']);
                     }
                     if (isset($stageData['bitrix_task_id'])) {
@@ -168,22 +218,55 @@ class ProductionSchemesController
                     if (isset($stageData['quantity'])) {
                         $stage->setQuantity($stageData['quantity']);
                     }
-                    if (isset($stageData['bitrix_task_id'])) {
-                        $stage->setBitrixTaskId($stageData['bitrix_task_id']);
-                    }
+//                    if (isset($stageData['bitrix_task_id'])) {
+//                        $stage->setBitrixTaskId($stageData['bitrix_task_id']);
+//                    }
                 }
             }
         }
 
+        if (isset($data['status'])) {
+            $scheme->setStatus($data['status']);
+        }
+
         $this->entityManager->flush();
-        
+
         // Получаем свежие данные после обновления
         $this->entityManager->refresh($scheme);
-        
+
         // Принудительно инициализируем коллекцию этапов
         $scheme->getStages()->toArray();
 
         $response->getBody()->write(json_encode($scheme->toArray()));
+        return $response;
+    }
+
+    public function sync(Request $request, Response $response, array $args): Response
+    {
+        $dealId = $args['id'] ?? null;
+
+        if (!$dealId) {
+            $response->getBody()->write(json_encode(['error' => 'deal_id is required']));
+            return $response;
+        }
+
+        try {
+            $scheme = $this->productionSchemeService->sync($dealId);
+
+            if (empty($scheme)) {
+                $response->getBody()->write(json_encode(['error' => 'deal_id is required']));
+                return $response;
+            }
+
+            $response->getBody()->write(json_encode($scheme->toArray()));
+            return $response;
+        } catch (\Exception $e) {
+            $response->getBody()->write(json_encode(['error' => $e->getMessage()]));
+            return $response;
+        }
+
+
+        $response->getBody()->write(json_encode($scheme));
         return $response;
     }
 
