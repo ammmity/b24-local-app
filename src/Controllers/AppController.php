@@ -3,6 +3,8 @@ namespace App\Controllers;
 
 use App\Entities\ProductPart;
 use App\Services\CRestService;
+use App\Settings\Settings;
+use App\Settings\SettingsInterface;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Http\Message\ResponseInterface;
@@ -13,15 +15,14 @@ use Twig\Error\RuntimeError;
 use Twig\Error\SyntaxError;
 
 class AppController {
-//    public const TEHNOLOG_DEPARTMENT_ID = 1;
-    public const TEHNOLOG_DEPARTMENT_ID = 16;
 
     /**
      * @throws \Exception
      */
     public function __construct(
         protected CRestService $CRestService,
-        protected EntityManagerInterface $entityManager
+        protected EntityManagerInterface $entityManager,
+        protected SettingsInterface $settings
     )
     {}
 
@@ -32,13 +33,19 @@ class AppController {
      */
     public function dashboard(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
     {
-
         $currentUser = $this->CRestService->currentUser();
-        $areUserTehnolog = in_array(self::TEHNOLOG_DEPARTMENT_ID, $currentUser['UF_DEPARTMENT']);
-//        $areUserTehnolog = true;
+
+
+        if ($this->settings->isProduction()) {
+            $areUserTehnolog = in_array($this->settings->get('b24')['TEHNOLOG_DEPARTMENT_ID'], $currentUser['UF_DEPARTMENT']);
+        } else {
+            $areUserTehnolog = true;
+        }
+
         $view = Twig::fromRequest($request);
         return $view->render($response, 'app.html.twig', [
             'areUserTehnolog' => $areUserTehnolog,
+            'isProduction' => $this->settings->isProduction()
         ]);
     }
 
@@ -60,10 +67,13 @@ class AppController {
         }
 
         $currentUser = $this->CRestService->currentUser();
-        $areUserTehnolog = in_array(self::TEHNOLOG_DEPARTMENT_ID, $currentUser['UF_DEPARTMENT']);
-//        $areUserTehnolog = true;
+        if ($this->settings->isProduction()) {
+            $areUserTehnolog = in_array($this->settings->get('b24')['TEHNOLOG_DEPARTMENT_ID'], $currentUser['UF_DEPARTMENT']);
+        } else {
+            $areUserTehnolog = true;
+        }
 
-//        $dealId = 9;
+        $dealId = 9;
 //        $result = $this->CRestService->callMethod('crm.deal.fields',[]);
 //        $products = $this->CRestService->callMethod('crm.deal.productrows.get', ['id' => $dealId]);
 //        $response->getBody()->write('<pre>'. print_r($products, true). '</pre>');
@@ -72,7 +82,8 @@ class AppController {
         $view = Twig::fromRequest($request);
         return $view->render($response, 'deal-production-scheme.html.twig', [
             'areUserTehnolog' => $areUserTehnolog,
-            'dealId' => $dealId
+            'dealId' => $dealId,
+            'isProduction' => $this->settings->isProduction()
         ]);
     }
 }

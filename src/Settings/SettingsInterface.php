@@ -7,4 +7,6 @@ interface SettingsInterface
      * @return mixed
      */
     public function get(string $key): mixed;
+
+    public function isProduction(): bool;
 }

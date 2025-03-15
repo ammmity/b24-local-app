@@ -103,7 +103,10 @@ $app->add(TwigMiddleware::create($app, $twig));
 $app->add(JsonResponseMiddleware::class);
 $app->add(CorsResponseMiddleware::class);
 
-$app->setBasePath('/production-app/public');
+
+if ($container->get(SettingsInterface::class)->isProduction()) {
+    $app->setBasePath('/production-app/public');
+}
 
 // Routes
 $app->group('/app/', function (RouteCollectorProxy $group) {
