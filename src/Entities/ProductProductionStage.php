@@ -27,6 +27,10 @@ class ProductProductionStage
     #[ORM\JoinColumn(name: 'operation_type_id', referencedColumnName: 'id', nullable: false, onDelete: 'CASCADE')]
     private OperationType $operationType;
 
+    #[ORM\ManyToOne(targetEntity: VirtualPart::class)]
+    #[ORM\JoinColumn(name: 'result_id', referencedColumnName: 'id', nullable: true)]
+    private ?VirtualPart $result = null;
+
     public function __construct(ProductPart $productPart, OperationType $operationType, int $stage)
     {
         $this->productPart = $productPart;
@@ -37,7 +41,7 @@ class ProductProductionStage
 
     public function toArray(): array
     {
-        return [
+        $data = [
             'id' => $this->getId(),
             'product_part_id' => $this->getProductPart()->getId(),
             'operation_type_id' => $this->getOperationType()->getId(),
@@ -48,6 +52,17 @@ class ProductProductionStage
             'stage' => $this->getStage(),
             'created' => $this->getCreated()->format('Y-m-d H:i:s')
         ];
+
+        if ($this->result) {
+            $data['result'] = [
+                'id' => $this->result->getId(),
+                'name' => $this->result->getName(),
+                'bitrix_id' => $this->result->getBitrixId()
+            ];
+            $data['result_id'] = $this->result->getId();
+        }
+
+        return $data;
     }
 
     public function getId(): ?int
@@ -96,6 +111,17 @@ class ProductProductionStage
     public function setOperationType(OperationType $operationType): self
     {
         $this->operationType = $operationType;
+        return $this;
+    }
+
+    public function getResult(): ?VirtualPart
+    {
+        return $this->result;
+    }
+
+    public function setResult(?VirtualPart $result): self
+    {
+        $this->result = $result;
         return $this;
     }
 }

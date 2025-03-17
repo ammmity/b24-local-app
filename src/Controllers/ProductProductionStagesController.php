@@ -5,6 +5,7 @@ namespace App\Controllers;
 use App\Entities\OperationType;
 use App\Entities\ProductPart;
 use App\Entities\ProductProductionStage;
+use App\Entities\VirtualPart;
 use App\Services\CRestService;
 use DateTime;
 use Doctrine\ORM\EntityManager;
@@ -81,6 +82,14 @@ class ProductProductionStagesController
                 $operationType,
                 $newStage
             );
+            
+            // Добавляем обработку result_id
+            if (isset($data['result_id']) && $data['result_id'] !== null) {
+                $virtualPart = $this->entityManager->find(VirtualPart::class, $data['result_id']);
+                if ($virtualPart) {
+                    $stage->setResult($virtualPart);
+                }
+            }
 
             $this->entityManager->persist($stage);
             $this->entityManager->flush();
@@ -116,6 +125,19 @@ class ProductProductionStagesController
                 $stage->setStage($data['stage']);
             }
 
+            // Исправляем обработку result_id
+            if (array_key_exists('result_id', $data)) {
+                if ($data['result_id'] === null) {
+                    $stage->setResult(null);
+                } else {
+                    $virtualPart = $this->entityManager->find(VirtualPart::class, $data['result_id']);
+                    if (!$virtualPart) {
+                        throw new \Exception('Виртуальная деталь не найдена');
+                    }
+                    $stage->setResult($virtualPart);
+                }
+            }
+
             $this->entityManager->flush();
 
             $response->getBody()->write(json_encode($stage->toArray()));
@@ -123,7 +145,7 @@ class ProductProductionStagesController
 
         } catch (\Exception $e) {
             $response->getBody()->write(json_encode(['error' => $e->getMessage()]));
-            return $response;
+            return $response->withStatus(400)->withHeader('Content-Type', 'application/json');
         }
     }
 
