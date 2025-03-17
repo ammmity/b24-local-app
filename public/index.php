@@ -33,7 +33,8 @@ use App\Controllers\{
     B24EventsController,
     OperationLogsController,
     GoodsController,
-    ReportsController
+    ReportsController,
+    VirtualPartsController
 };
 use Doctrine\ORM\ORMSetup;
 use Doctrine\ORM\EntityManager;
@@ -169,6 +170,13 @@ $app->group('/api/', function (RouteCollectorProxy $group) {
     $group->put('goods/{id}', [GoodsController::class, 'update']);
     $group->delete('goods/{id}', [GoodsController::class, 'delete']);
     $group->any('goods/import/', [GoodsController::class, 'import']);
+
+    $group->get('virtual-parts', [VirtualPartsController::class, 'list']);
+    $group->get('virtual-parts/{id}', [VirtualPartsController::class, 'get']);
+    $group->post('virtual-parts', [VirtualPartsController::class, 'create']);
+    $group->put('virtual-parts/{id}', [VirtualPartsController::class, 'update']);
+    $group->delete('virtual-parts/{id}', [VirtualPartsController::class, 'delete']);
+    $group->any('virtual-parts/import/', [VirtualPartsController::class, 'import']);
 
     // Отчеты
     $group->get('reports/employee-operations', [ReportsController::class, 'employeeOperations'])->setName('employee-operations-report');

@@ -4,7 +4,7 @@ import Dashboard from './components/views/Dashboard.vue';
 import Settings from './components/views/Settings.vue';
 import Goods from './components/views/Goods.vue'    
 import EmployeeReport from './components/views/EmployeeReport.vue'
-
+import VirtualParts from './components/views/VirtualParts.vue'
 // Получаем базовый путь из env
 const basePath = import.meta.env.VITE_APP_BASE_PATH || '/production-app/public/app/';
 
@@ -22,6 +22,11 @@ const routes = [
                 path: 'details',
                 name: 'Details',
                 component: () => import('./components/views/Details.vue')
+            },
+            {
+                path: 'virtual-parts',
+                name: 'virtual-parts',
+                component: () => import('./components/views/VirtualParts.vue')
             },
             {
                 path: 'deal-production-scheme',
