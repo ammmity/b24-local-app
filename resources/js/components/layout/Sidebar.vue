@@ -18,6 +18,14 @@
     </el-menu-item>
 
     <el-menu-item
+        :index="basePath + 'virtual-parts'"
+        @click="$router.push(basePath + 'virtual-parts')"
+    >
+      <el-icon><Box /></el-icon>
+      <template #title>Виртуальные детали</template>
+    </el-menu-item>
+
+    <el-menu-item
       v-if="dealId"
       :index="basePath + 'deal-production-scheme'"
       @click="$router.push(basePath + 'deal-production-scheme')"
@@ -56,14 +64,6 @@
     >
       <el-icon><Document /></el-icon>
       <template #title>Отчет по сотрудникам</template>
-    </el-menu-item>
-
-    <el-menu-item
-      :index="basePath + 'virtual-parts'"
-      @click="$router.push(basePath + 'virtual-parts')"
-    >
-      <el-icon><Box /></el-icon>
-      <template #title>Виртуальные детали</template>
     </el-menu-item>
 
   </el-menu>
