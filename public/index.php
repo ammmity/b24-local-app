@@ -13,6 +13,7 @@ use Slim\Views\TwigMiddleware;
 use App\Services\CRestService;
 use App\Services\KanbanStageService;
 use App\Services\ProductionSchemeService;
+use App\Services\ProductStoresAndDocumentsService;
 use App\Settings\Settings;
 use App\Settings\SettingsInterface;
 use App\Middlewares\{
@@ -56,8 +57,13 @@ $container = new DI\Container([
     KanbanStageService::class => DI\factory(function (CRestService $CRestService) {
         return new KanbanStageService($CRestService);
     }),
-    ProductionSchemeService::class => DI\factory(function (CRestService $CRestService, EntityManagerInterface $entityManager) {
-        return new ProductionSchemeService($CRestService, $entityManager);
+    ProductionSchemeService::class => DI\factory(function (CRestService $CRestService, EntityManagerInterface $entityManager, SettingsInterface $settings, ProductStoresAndDocumentsService $productStoresAndDocumentsService) {
+        return new ProductionSchemeService($CRestService, $entityManager, $settings, $productStoresAndDocumentsService);
+    }, [
+        'cache' => false
+    ]),
+    ProductStoresAndDocumentsService::class => DI\factory(function (CRestService $CRestService, EntityManagerInterface $entityManager, SettingsInterface $settings) {
+        return new ProductStoresAndDocumentsService($CRestService, $entityManager, $settings);
     }, [
         'cache' => false
     ]),

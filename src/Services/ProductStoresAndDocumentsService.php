@@ -1,4 +1,5 @@
 <?php
+namespace App\Services;
 
 use App\Services\CRestService;
 use App\Settings\SettingsInterface;
