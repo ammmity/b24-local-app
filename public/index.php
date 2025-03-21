@@ -13,6 +13,7 @@ use Slim\Views\TwigMiddleware;
 use App\Services\CRestService;
 use App\Services\KanbanStageService;
 use App\Services\ProductionSchemeService;
+use App\Services\ProductStoresAndDocumentsService;
 use App\Settings\Settings;
 use App\Settings\SettingsInterface;
 use App\Middlewares\{
@@ -33,7 +34,8 @@ use App\Controllers\{
     B24EventsController,
     OperationLogsController,
     GoodsController,
-    ReportsController
+    ReportsController,
+    VirtualPartsController
 };
 use Doctrine\ORM\ORMSetup;
 use Doctrine\ORM\EntityManager;
@@ -55,8 +57,13 @@ $container = new DI\Container([
     KanbanStageService::class => DI\factory(function (CRestService $CRestService) {
         return new KanbanStageService($CRestService);
     }),
-    ProductionSchemeService::class => DI\factory(function (CRestService $CRestService, EntityManagerInterface $entityManager) {
-        return new ProductionSchemeService($CRestService, $entityManager);
+    ProductionSchemeService::class => DI\factory(function (CRestService $CRestService, EntityManagerInterface $entityManager, SettingsInterface $settings, ProductStoresAndDocumentsService $productStoresAndDocumentsService) {
+        return new ProductionSchemeService($CRestService, $entityManager, $settings, $productStoresAndDocumentsService);
+    }, [
+        'cache' => false
+    ]),
+    ProductStoresAndDocumentsService::class => DI\factory(function (CRestService $CRestService, EntityManagerInterface $entityManager, SettingsInterface $settings) {
+        return new ProductStoresAndDocumentsService($CRestService, $entityManager, $settings);
     }, [
         'cache' => false
     ]),
@@ -169,6 +176,13 @@ $app->group('/api/', function (RouteCollectorProxy $group) {
     $group->put('goods/{id}', [GoodsController::class, 'update']);
     $group->delete('goods/{id}', [GoodsController::class, 'delete']);
     $group->any('goods/import/', [GoodsController::class, 'import']);
+
+    $group->get('virtual-parts', [VirtualPartsController::class, 'list']);
+    $group->get('virtual-parts/{id}', [VirtualPartsController::class, 'get']);
+    $group->post('virtual-parts', [VirtualPartsController::class, 'create']);
+    $group->put('virtual-parts/{id}', [VirtualPartsController::class, 'update']);
+    $group->delete('virtual-parts/{id}', [VirtualPartsController::class, 'delete']);
+    $group->any('virtual-parts/import/', [VirtualPartsController::class, 'import']);
 
     // Отчеты
     $group->get('reports/employee-operations', [ReportsController::class, 'employeeOperations'])->setName('employee-operations-report');

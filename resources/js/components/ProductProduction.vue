@@ -31,6 +31,27 @@
           {{ row.operation_type?.machine }}
         </template>
       </el-table-column>
+      
+      <!-- Новая колонка для отображения результата -->
+      <el-table-column label="Результат">
+        <template #default="{ row }">
+          <el-select
+            v-model="row.result_id"
+            filterable
+            clearable
+            placeholder="Выберите результат"
+            @change="updateStageResult(row)"
+          >
+            <el-option
+              v-for="part in virtualParts"
+              :key="part.id"
+              :label="part.name"
+              :value="part.id"
+            />
+          </el-select>
+        </template>
+      </el-table-column>
+      
       <el-table-column label="Действия" width="100">
         <template #default="{ row }">
           <el-button
@@ -72,6 +93,23 @@
             />
           </el-select>
         </el-form-item>
+        
+        <!-- Новое поле для выбора результата -->
+        <el-form-item label="Результат">
+          <el-select
+            v-model="addForm.result_id"
+            placeholder="Выберите результат"
+            filterable
+            clearable
+          >
+            <el-option
+              v-for="part in virtualParts"
+              :key="part.id"
+              :label="part.name"
+              :value="part.id"
+            />
+          </el-select>
+        </el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="showAddStageDialog = false">Отмена</el-button>
@@ -104,13 +142,15 @@ export default defineComponent({
   setup(props) {
     const stages = ref([]);
     const operationTypes = ref([]);
+    const virtualParts = ref([]); // Новая переменная для виртуальных деталей
     const showAddStageDialog = ref(false);
     const addFormRef = ref(null);
     const dragTable = ref(null);
 
     const addForm = ref({
       operation_type_id: '',
-      product_part_id: props.productId
+      product_part_id: props.productId,
+      result_id: null // Новое поле для результата
     });
 
     const rules = {
@@ -142,6 +182,33 @@ export default defineComponent({
         operationTypes.value = [];
       }
     };
+    
+    // Новый метод для загрузки виртуальных деталей
+    const fetchVirtualParts = async () => {
+      try {
+        const response = await apiClient.get('/virtual-parts');
+        virtualParts.value = Array.isArray(response.data) ? response.data : [];
+      } catch (error) {
+        console.error('API Error:', error);
+        ElMessage.error('Ошибка при загрузке виртуальных деталей');
+        virtualParts.value = [];
+      }
+    };
+    
+    // Новый метод для обновления результата этапа
+    const updateStageResult = async (stage) => {
+      try {
+        await apiClient.patch(`/product-operation-stages/${stage.id}`, {
+          result_id: stage.result_id
+        });
+        ElMessage.success('Результат этапа обновлен');
+      } catch (error) {
+        console.error('API Error:', error);
+        ElMessage.error('Ошибка при обновлении результата этапа');
+        // Откатываем изменения в случае ошибки
+        fetchStages();
+      }
+    };
 
     const submitAddForm = async () => {
       if (!addFormRef.value) return;
@@ -155,7 +222,8 @@ export default defineComponent({
             // Сбрасываем форму
             addForm.value = {
               operation_type_id: '',
-              product_part_id: props.productId
+              product_part_id: props.productId,
+              result_id: null // Сбрасываем результат
             };
             await fetchStages();
           } catch (error) {
@@ -227,20 +295,22 @@ export default defineComponent({
     });
 
     onMounted(async () => {
-      await Promise.all([fetchStages(), fetchOperationTypes()]);
+      await Promise.all([fetchStages(), fetchOperationTypes(), fetchVirtualParts()]);
       initSortable();
     });
 
     return {
       stages,
       operationTypes,
+      virtualParts,
       showAddStageDialog,
       addForm,
       addFormRef,
       rules,
       submitAddForm,
       deleteStage,
-      dragTable
+      dragTable,
+      updateStageResult
     };
   }
 });

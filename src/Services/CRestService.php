@@ -70,4 +70,49 @@ class CRestService
             'entityId' => $groupId
         ])['result'];
     }
+
+    // Создать документ прихода
+    public function addCatalogDocument(string $title, string $comment, string $docType = 'S')
+    {
+        return $this->callMethod('catalog.document.add', [
+            'fields' => [
+                'docType' => $docType,
+                'contractorId' => '1',
+                'responsibleId' => '1',
+                'currency' => 'RUB',
+                'total' => '0',
+                'commentary' => $comment,
+                'title' => $title,
+            ]
+        ])['result']['document'];
+    }
+
+    // Добавить товар в документ прихода
+    public function addElementToCatalogDocument(
+        int $documentId,
+        int $storeFrom,
+        int $storeTo,
+        int $elementId,
+        int $amount,
+        int $purchasingPrice = 0,
+        int $basePrice = 0
+    ) {
+        return $this->callMethod('catalog.document.element.add', [
+            'fields' => [
+                'docId' => $documentId,
+                'storeFrom' => $storeFrom,
+                'storeTo' => $storeTo,
+                'elementId' => $elementId,
+                'amount' => $amount,
+                'purchasingPrice' => $purchasingPrice,
+            ],
+        ])['result'];
+    }
+
+    // Провести документ
+    public function conductDocument(int $documentId) {
+        return $this->callMethod('catalog.document.conduct', [
+            'id' => $documentId,
+        ]);
+    }
 }

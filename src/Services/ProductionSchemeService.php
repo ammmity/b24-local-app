@@ -5,7 +5,9 @@ namespace App\Services;
 use App\Entities\BitrixGroupKanbanStage;
 use App\Entities\ProductionScheme;
 use App\Entities\ProductionSchemeStage;
+use App\Entities\ProductProductionStage;
 use App\Services\CRestService;
+use App\Settings\SettingsInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use App\Entities\OperationLog;
 use App\Entities\OperationPrice;
@@ -17,6 +19,8 @@ class ProductionSchemeService
     public function __construct(
         protected CRestService $CRestService,
         protected EntityManagerInterface $entityManager,
+        protected SettingsInterface $settings,
+        protected ProductStoresAndDocumentsService $productStoresAndDocumentsService
     )
     {}
 
@@ -55,6 +59,7 @@ class ProductionSchemeService
         $this->entityManager->flush();
     }
 
+    // TODO: Декомпозировать метод
     public function updateSchemeStages(string|int $taskId)
     {
         $currentUser = $this->CRestService->currentUser();
@@ -72,6 +77,37 @@ class ProductionSchemeService
 
         if ($stage->getStatus() === 'Завершены') {
             $productPart = $stage->toArray()['product_part']['id'];
+
+            // При создании детали ложим результат работы на виртуальный склад
+            $baseProductProductionStage = $this->entityManager->getRepository(ProductProductionStage::class)
+                ->findOneBy(['productPart' => $stage->toArray()['product_part']['id'], 'operationType' => $stage->toArray()['operation_type']['id']]);
+
+            $virtualPart = $baseProductProductionStage->getResult();
+            if ($virtualPart) {
+                $this->productStoresAndDocumentsService->addProductRemains(
+                    (int) $virtualPart->getBitrixId(),
+                    (int) $this->settings->get('b24')['VIRTUAL_STORE_ID'],
+                    (int) $stage->getQuantity()
+                );
+            }
+            // При создании детали удаляем предыдущий виртуальный товар с вирт. склада
+            if ($stage->getStageNumber() > 1) {
+                $prevStage = $this->entityManager->getRepository(ProductionSchemeStage::class)
+                    ->findOneBy(['productPart' => $productPart, 'stageNumber' => $stage->getStageNumber() - 1]);
+
+                $prevBaseProductProductionStage = $this->entityManager->getRepository(ProductProductionStage::class)
+                    ->findOneBy(['productPart' => $prevStage->toArray()['product_part']['id'], 'operationType' => $prevStage->toArray()['operation_type']['id']]);
+                $prevVirtualPart = $prevBaseProductProductionStage->getResult();
+
+                if ($prevVirtualPart) {
+                    $this->productStoresAndDocumentsService->removeProductFromStore(
+                        (int) $prevVirtualPart->getBitrixId(),
+                        (int) $this->settings->get('b24')['VIRTUAL_STORE_ID'],
+                        (int) $prevStage->getQuantity()
+                    );
+                }
+            }
+
             $nextStage = $this->entityManager->getRepository(ProductionSchemeStage::class)
                 ->findOneBy(['productPart' => $productPart, 'stageNumber' => $stage->getStageNumber() + 1]);
 
@@ -97,12 +133,10 @@ class ProductionSchemeService
                 $b24Task = $this->CRestService->addTask([
                     'fields' => [
                         'TITLE' => $title, // Название задачи
-                        //'DEADLINE' => '2023-12-31T23:59:59', // Крайний срок
                         'CREATED_BY' => $currentUser['ID'], // Идентификатор постановщика
                         'RESPONSIBLE_ID' => $nextStage->getExecutorId(), // Идентификатор исполнителя
                         'STAGE_ID' => (int) $nextStageWaitingKanbanStage->getStageId(), // Стадия
                         'GROUP_ID' => $nextStageGroupId, // Стадия
-                        // Пример передачи нескольких значений в поле UF_CRM_TASK
                         'UF_CRM_TASK' => [
                             'D_'.$nextStage->getScheme()->getDealId() // Привязка к сделке
                         ],
