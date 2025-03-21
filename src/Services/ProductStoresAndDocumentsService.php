@@ -16,7 +16,7 @@ class ProductStoresAndDocumentsService
     {}
 
     // Включен ли складской учет
-    protected function isDocumentModeEnabled(): bool
+    public function isDocumentModeEnabled(): bool
     {
         return $this->settings->get('b24')['IS_CATALOG_DOCUMENT_MODE_ENABLED'];
     }
@@ -27,10 +27,11 @@ class ProductStoresAndDocumentsService
         if ($this->isDocumentModeEnabled()) {
             $title = 'Модуль производства: Внесение материала ';
             $comment = $title .= '('.$this->getStoreName($storeId).')';
-            $documentId = $this->CRestService->addCatalogDocument($title, $comment);
+            $documentId = $this->CRestService->addCatalogDocument($title, $comment)['id'];
+
             $this->CRestService->addElementToCatalogDocument($documentId, 0, $storeId, $catalogElementId, $quantity);
 
-            return $this->CRestService->conductDocument($documentId);
+            return $this->CRestService->conductDocument((int) $documentId);
         } else {
             // добавить quantity без проведения документа
         }
@@ -42,7 +43,7 @@ class ProductStoresAndDocumentsService
         if ($this->isDocumentModeEnabled()) {
             $title = 'Модуль производства: Удаление материала ';
             $comment = $title .= '('.$this->getStoreName($storeId).')';
-            $documentId = $this->CRestService->addCatalogDocument($title, $comment, 'D');
+            $documentId = $this->CRestService->addCatalogDocument($title, $comment)['id'];
             $this->CRestService->addElementToCatalogDocument($documentId, 0, $storeId, $catalogElementId, $quantity);
 
             return $this->CRestService->conductDocument($documentId);

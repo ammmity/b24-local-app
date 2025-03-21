@@ -72,27 +72,19 @@ class CRestService
     }
 
     // Создать документ прихода
-    public function addCatalogDocument(string $title, string $comment, string $docType = 'A')
+    public function addCatalogDocument(string $title, string $comment, string $docType = 'S')
     {
         return $this->callMethod('catalog.document.add', [
             'fields' => [
                 'docType' => $docType,
-//                'contractorId' => '1',
-//                'responsibleId' => '1',
-//                'dateModify' => '2000-01-01T00:00:00+02:00',
-//                'dateCreate' => '2000-01-01T00:00:00+02:00',
-//                'createdBy' => '1',
-//                'modifiedBy' => '1',
+                'contractorId' => '1',
+                'responsibleId' => '1',
                 'currency' => 'RUB',
-                'status' => 'S',
-//                'dateStatus' => '2000-01-01T00:00:00+02:00',
-//                'dateDocument' => '2000-01-01T00:00:00+02:00',
-//                'statusBy' => '1',
-                'total' => '100',
+                'total' => '0',
                 'commentary' => $comment,
                 'title' => $title,
             ]
-        ])['result'];
+        ])['result']['document'];
     }
 
     // Добавить товар в документ прихода
@@ -102,7 +94,8 @@ class CRestService
         int $storeTo,
         int $elementId,
         int $amount,
-//        int $purchasingPrice,
+        int $purchasingPrice = 0,
+        int $basePrice = 0
     ) {
         return $this->callMethod('catalog.document.element.add', [
             'fields' => [
@@ -111,7 +104,7 @@ class CRestService
                 'storeTo' => $storeTo,
                 'elementId' => $elementId,
                 'amount' => $amount,
-//                'purchasingPrice' => $purchasingPrice,
+                'purchasingPrice' => $purchasingPrice,
             ],
         ])['result'];
     }
@@ -120,6 +113,6 @@ class CRestService
     public function conductDocument(int $documentId) {
         return $this->callMethod('catalog.document.conduct', [
             'id' => $documentId,
-        ])['result'];
+        ]);
     }
 }
