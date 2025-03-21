@@ -6,6 +6,7 @@ use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity]
 #[ORM\Table(name: 'operation_prices')]
+#[ORM\UniqueConstraint(name: "unique_operation_type", columns: ["operation_type_id"])]
 class OperationPrice
 {
     #[ORM\Id]
@@ -14,7 +15,7 @@ class OperationPrice
     private ?int $id = null;
 
     #[ORM\ManyToOne(targetEntity: OperationType::class)]
-    #[ORM\JoinColumn(nullable: false)]
+    #[ORM\JoinColumn(name: "operation_type_id", nullable: false)]
     private OperationType $operationType;
 
     #[ORM\Column(type: 'integer')]
