@@ -52,7 +52,7 @@ class ProductStoresAndDocumentsService
         }
     }
 
-    protected function getStoreName(int $storeId): string
+    public function getStoreName(int $storeId): string
     {
         $storeNames = [
             $this->settings->get('b24')['PRODUCTION_STORE_ID'] => 'Склад производства',
