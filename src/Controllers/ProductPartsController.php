@@ -4,6 +4,7 @@ namespace App\Controllers;
 
 use App\Entities\ProductPart;
 use App\Services\CRestService;
+use App\Settings\SettingsInterface;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Http\Message\ResponseInterface;
@@ -11,22 +12,10 @@ use Psr\Http\Message\ServerRequestInterface;
 
 class ProductPartsController {
 
-    const PRODUCTS_CATALOG_IBLOCK_ID = 14;
-    const PRODUCTS_CATALOG_SECTION_ID = 13;
-    const PRODUCT_PARTS_CATALOG_IBLOCK_ID = 14;
-    const PRODUCT_PARTS_CATALOG_SECTION_ID = 15;
-    const PRODUCT_PARTS_PROP_ID = 64;
-
-//    const PRODUCTS_CATALOG_IBLOCK_ID = 15;
-//    const PRODUCTS_CATALOG_SECTION_ID = 11;
-//    const PRODUCT_PARTS_CATALOG_IBLOCK_ID = 15;
-//    const PRODUCT_PARTS_CATALOG_SECTION_ID = 9;
-//
-//    const PRODUCT_PARTS_PROP_ID = 53;
-
     public function __construct(
         protected CRestService $CRestService,
         protected EntityManagerInterface $entityManager,
+        protected SettingsInterface $settings
     )
     {}
 
@@ -81,6 +70,7 @@ class ProductPartsController {
 
     public function import(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
     {
+        $b24Settings = $this->settings->get('b24');
         $productListResponse = $this->CRestService->callMethod('catalog.product.list', [
             'select' => [
                 "id",
@@ -89,11 +79,11 @@ class ProductPartsController {
                 "code",
                 "type",
                 "xmlId",
-                "property".self::PRODUCT_PARTS_PROP_ID,
+                "property".$b24Settings['PRODUCT_PARTS_PROP_ID'],
             ],
             'filter' => [
-                "iblockId" => self::PRODUCT_PARTS_CATALOG_IBLOCK_ID,
-                "iblockSectionId" => self::PRODUCT_PARTS_CATALOG_SECTION_ID,
+                "iblockId" => $b24Settings['PRODUCT_PARTS_CATALOG_IBLOCK_ID'],
+                "iblockSectionId" => $b24Settings['PRODUCT_PARTS_CATALOG_SECTION_ID'],
             ],
             'order' => [
                 "id" => "desc",

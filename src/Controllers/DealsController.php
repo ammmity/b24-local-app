@@ -6,34 +6,24 @@ use App\Entities\ProductPart;
 use App\Entities\Good;
 use App\Entities\GoodPart;
 use App\Services\CRestService;
+use App\Settings\SettingsInterface;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 
 class DealsController {
-    const PRODUCTS_CATALOG_IBLOCK_ID = 14;
-    const PRODUCTS_CATALOG_SECTION_ID = 13;
-    const PRODUCT_PARTS_CATALOG_IBLOCK_ID = 14;
-    const PRODUCT_PARTS_CATALOG_SECTION_ID = 15;
-    const PRODUCT_PARTS_PROP_ID = 64;
-//
-//    const PRODUCTS_CATALOG_IBLOCK_ID = 15;
-//    const PRODUCTS_CATALOG_SECTION_ID = 11;
-//    const PRODUCT_PARTS_CATALOG_IBLOCK_ID = 15;
-//    const PRODUCT_PARTS_CATALOG_SECTION_ID = 9;
-//
-//    const PRODUCT_PARTS_PROP_ID = 53;
-
 
     public function __construct(
         protected CRestService $CRestService,
         protected EntityManagerInterface $entityManager,
+        protected SettingsInterface $settings
     )
     {}
 
     public function get(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
     {
+        $b24Settings = $this->settings->get('b24');
         $id = $args['id'];
 
         if (empty($id)) {
@@ -62,8 +52,8 @@ class DealsController {
                 if ($withParentId) { // Если товар унаследован - возьмем детали из корневого товара TODO: wtf... найти решение
                     $parentProductRaw = $this->CRestService->callMethod('catalog.product.get', ['id' => $product['parentId']['value']]);
                     $parentProduct = isset($parentProductRaw['result']) ? $parentProductRaw['result']['product'] : null;
-                    if (isset($parentProduct['property'.self::PRODUCT_PARTS_PROP_ID])) {
-                        $product['property'.self::PRODUCT_PARTS_PROP_ID] = $parentProduct['property'.self::PRODUCT_PARTS_PROP_ID];
+                    if (isset($parentProduct['property'.$b24Settings['PRODUCT_PARTS_PROP_ID']])) {
+                        $product['property'.$b24Settings['PRODUCT_PARTS_PROP_ID']] = $parentProduct['property'.$b24Settings['PRODUCT_PARTS_PROP_ID']];
                     }
                 }
 
@@ -74,7 +64,7 @@ class DealsController {
                 $deal['dealProducts'][$k]['parts'] = [];
 
                 // Проверяем наличие деталей продукта
-                $productPartsPropertyId = 'property' . self::PRODUCT_PARTS_PROP_ID;
+                $productPartsPropertyId = 'property' . $b24Settings['PRODUCT_PARTS_PROP_ID'];
                 if (isset($product[$productPartsPropertyId]) && is_array($product[$productPartsPropertyId])) {
                     $linkedProductPartIds = array_column($product[$productPartsPropertyId], 'value');
 

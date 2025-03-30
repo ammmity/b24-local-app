@@ -5,6 +5,7 @@ namespace App\Controllers;
 use App\Entities\Good;
 use App\Entities\GoodPart;
 use App\Entities\ProductPart;
+use App\Settings\SettingsInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
@@ -12,22 +13,11 @@ use App\Services\CRestService;
 
 class GoodsController
 {
-     const PRODUCTS_CATALOG_IBLOCK_ID = 14;
-     const PRODUCTS_CATALOG_SECTION_ID = 13;
-     const PRODUCT_PARTS_CATALOG_IBLOCK_ID = 14;
-     const PRODUCT_PARTS_CATALOG_SECTION_ID = 15;
-     const PRODUCT_PARTS_PROP_ID = 64;
-//
-//    const PRODUCTS_CATALOG_IBLOCK_ID = 15;
-//    const PRODUCTS_CATALOG_SECTION_ID = 11;
-//    const PRODUCT_PARTS_CATALOG_IBLOCK_ID = 15;
-//    const PRODUCT_PARTS_CATALOG_SECTION_ID = 9;
-//
-//    const PRODUCT_PARTS_PROP_ID = 53;
 
     public function __construct(
         protected EntityManagerInterface $entityManager,
         protected CRestService $CRestService,
+        protected SettingsInterface $settings
     ) {}
 
     public function list(Request $request, Response $response): Response
@@ -201,6 +191,7 @@ class GoodsController
 
     public function import(Request $request, Response $response, array $args): Response
     {
+        $b24Settings = $this->settings->get('b24');
         $productListResponse = $this->CRestService->callMethod('catalog.product.list', [
             'select' => [
                 "id",
@@ -209,11 +200,11 @@ class GoodsController
                 "code",
                 "type",
                 "xmlId",
-                "property".self::PRODUCT_PARTS_PROP_ID,
+                "property".$b24Settings['PRODUCT_PARTS_PROP_ID'],
             ],
             'filter' => [
-                "iblockId" => self::PRODUCTS_CATALOG_IBLOCK_ID,
-                "iblockSectionId" => self::PRODUCTS_CATALOG_SECTION_ID,
+                "iblockId" => $b24Settings['PRODUCTS_CATALOG_IBLOCK_ID'],
+                "iblockSectionId" => $b24Settings['PRODUCTS_CATALOG_SECTION_ID'],
             ],
             'order' => [
                 "id" => "desc",
@@ -244,8 +235,8 @@ class GoodsController
 
             // Создаем массив ID деталей, которые пришли из API
             $incomingPartIds = [];
-            if (isset($productData['property'.self::PRODUCT_PARTS_PROP_ID])) {
-                foreach ($productData['property'.self::PRODUCT_PARTS_PROP_ID] as $partData) {
+            if (isset($productData['property'.$b24Settings['PRODUCT_PARTS_PROP_ID']])) {
+                foreach ($productData['property'.$b24Settings['PRODUCT_PARTS_PROP_ID']] as $partData) {
                     $productPart = $this->entityManager->getRepository(ProductPart::class)->findOneBy([
                         'bitrix_id' => $partData['value']
                     ]);

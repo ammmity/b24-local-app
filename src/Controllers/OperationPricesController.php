@@ -10,17 +10,14 @@ use Psr\Http\Message\ServerRequestInterface as Request;
 
 class OperationPricesController
 {
-    private EntityManagerInterface $entityManager;
-
-    public function __construct(EntityManagerInterface $entityManager)
-    {
-        $this->entityManager = $entityManager;
-    }
+    public function __construct(
+        protected EntityManagerInterface $entityManager,
+    )
+    {}
 
     public function list(Request $request, Response $response): Response
     {
         $operationPrices = $this->entityManager->getRepository(OperationPrice::class)->findAll();
-
         $result = [];
         foreach ($operationPrices as $operationPrice) {
             $result[] = $operationPrice->toArray();

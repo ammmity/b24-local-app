@@ -134,7 +134,9 @@ export default defineComponent({
       fetchProductParts();
     };
 
-    onMounted(fetchProductParts);
+    onMounted(() => {
+      fetchProductParts();
+    });
 
     return {
       dealId,
@@ -169,4 +171,4 @@ export default defineComponent({
   color: red;
   margin-top: 10px;
 }
-</style> 
+</style>

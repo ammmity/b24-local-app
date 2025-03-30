@@ -221,13 +221,27 @@ export default defineComponent({
       await createFormRef.value.validate(async (valid) => {
         if (valid) {
           try {
+            // Проверяем, существует ли уже цена для этого типа операции
+            const existingPrice = operationPrices.value.find(
+              price => price.operation_type_id === createForm.value.operation_type_id
+            );
+            
+            if (existingPrice) {
+              ElMessage.error('Цена для этой операции уже существует');
+              return;
+            }
+
             await apiClient.post('/operation-prices', createForm.value);
             ElMessage.success('Цена операции успешно добавлена');
             showCreateModal.value = false;
             createForm.value = { operation_type_id: '', price: 0 };
             await fetchOperationPrices();
           } catch (error) {
-            ElMessage.error(error.response?.data?.error || 'Произошла ошибка при создании');
+            if (error.response?.status === 422) {
+              ElMessage.error('Цена для этой операции уже существует');
+            } else {
+              ElMessage.error(error.response?.data?.error || 'Произошла ошибка при создании');
+            }
           }
         }
       });
@@ -248,6 +262,17 @@ export default defineComponent({
       await editFormRef.value.validate(async (valid) => {
         if (valid) {
           try {
+            // Проверяем, существует ли уже цена для этого типа операции (исключая текущую запись)
+            const existingPrice = operationPrices.value.find(
+              price => price.operation_type_id === editForm.value.operation_type_id && 
+                       price.id !== editForm.value.id
+            );
+            
+            if (existingPrice) {
+              ElMessage.error('Цена для этой операции уже существует');
+              return;
+            }
+
             await apiClient.patch(`/operation-prices/${editForm.value.id}`, {
               operation_type_id: editForm.value.operation_type_id,
               price: editForm.value.price
@@ -256,7 +281,11 @@ export default defineComponent({
             showEditModal.value = false;
             await fetchOperationPrices();
           } catch (error) {
-            ElMessage.error(error.response?.data?.error || 'Произошла ошибка при обновлении');
+            if (error.response?.status === 422) {
+              ElMessage.error('Цена для этой операции уже существует');
+            } else {
+              ElMessage.error(error.response?.data?.error || 'Произошла ошибка при обновлении');
+            }
           }
         }
       });

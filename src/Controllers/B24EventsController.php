@@ -42,21 +42,13 @@ class B24EventsController
         }
 
         try {
-            // Выполняем обновление
-//            $logData = date('Y-m-d H:i:s') . ' - ' . json_encode($postData, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) . PHP_EOL;
-
             if ($postData['event'] === 'ONTASKUPDATE') {
-
-                $logData = print_r($postData, 1);
-                $logDir = dirname(__DIR__, 2) . '/logs';
-                if (!is_dir($logDir)) {
-                    mkdir($logDir, 0755, true);
-                }
-
-                file_put_contents($logDir . '/taskUpdatedHandler.log', $logData, FILE_APPEND);
-//                die();
-
-
+//                $logData = print_r($postData, 1);
+//                $logDir = dirname(__DIR__, 2) . '/logs';
+//                if (!is_dir($logDir)) {
+//                    mkdir($logDir, 0755, true);
+//                }
+//                file_put_contents($logDir . '/taskUpdatedHandler.log', $logData, FILE_APPEND);
 
                 $this->productionSchemeService->updateSchemeStages($taskId);
             }
@@ -72,38 +64,6 @@ class B24EventsController
             $this->releaseLock($lockFile);
             throw $e;
         }
-
-//
-//        $postData = $request->getParsedBody();
-//        $logData = date('Y-m-d H:i:s') . ' - ' . json_encode($postData, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) . PHP_EOL;
-//
-//        if ($postData['event'] === 'ONTASKUPDATE') {
-//
-//            $taskId = $postData['data']['FIELDS_AFTER']['ID'];
-//
-//
-//
-//            $logData = print_r($postData, 1);
-//            $logDir = dirname(__DIR__, 2) . '/logs';
-//            if (!is_dir($logDir)) {
-//                mkdir($logDir, 0755, true);
-//            }
-//
-//            file_put_contents($logDir . '/taskUpdatedHandler.log', $logData, FILE_APPEND);
-//            die();
-//
-//
-//
-//            $this->productionSchemeService->updateSchemeStages($taskId);
-//        }
-//
-//        $logData = print_r($postData, 1);
-//        $logDir = dirname(__DIR__, 2) . '/logs';
-//        if (!is_dir($logDir)) {
-//            mkdir($logDir, 0755, true);
-//        }
-//
-//        file_put_contents($logDir . '/taskUpdatedHandler.log', $logData, FILE_APPEND);
 
         $response->getBody()->write(json_encode(['success' => true]));
         return $response;
