@@ -42,7 +42,7 @@
           type="success"
           :loading="isStarting"
           @click="startProduction"
-          :disabled="hasErrors || !tableData.length || !allExecutorsAssigned || productionScheme?.status === 'done'"
+          :disabled="hasErrors || !tableData.length || productionScheme?.status === 'done'"
         >
           Запустить производство
         </el-button>
@@ -170,7 +170,7 @@ export default defineComponent({
     const isSaving = ref(false);
     const isStarting = ref(false);
     const isLoadingStatuses = ref(false);
-
+    const systemUserId = ref(null);
     const hasErrors = computed(() => errors.value.length > 0);
 
     // Вычисляемое свойство для данных таблицы
@@ -246,6 +246,16 @@ export default defineComponent({
       } catch (error) {
         console.error('Error fetching deal:', error);
         errors.value.push(error.message);
+      }
+    };
+
+    const fetchSystemUserId = async () => {
+      try {
+        const response = await apiClient.get('/system-user');
+        systemUserId.value = response.data;
+      } catch (error) {
+        console.error('Error fetching system user id:', error);
+        errors.value.push('Ошибка при получении id системного пользователя: ' + error.message);
       }
     };
 
@@ -453,15 +463,22 @@ export default defineComponent({
       }
     };
 
-    // Проверка, что все исполнители назначены
-    const allExecutorsAssigned = computed(() => {
-      return tableData.value.every(row => row.executor);
-    });
-
     // Добавляем метод запуска производства
     const startProduction = async () => {
       try {
         isStarting.value = true;
+        
+        // Автоматически назначаем системного пользователя для всех стадий
+        tableData.value.forEach(row => {
+          if (!row.executor) {
+            row.executor = systemUserId.value?.toString();
+          }
+        });
+
+        // Сначала сохраняем изменения с системным пользователем
+        await saveProductionScheme();
+
+        // Затем запускаем производство
         const response = await apiClient.patch(`/production-schemes/${dealId}`, {
           status: 'progress'
         });
@@ -532,6 +549,7 @@ export default defineComponent({
     onMounted(async () => {
       // Сначала загружаем пользователей
       await fetchUsers();
+      await fetchSystemUserId();
 
       if (dealId) {
         // Только после загрузки пользователей выполняем остальные запросы
@@ -562,7 +580,6 @@ export default defineComponent({
       getTypeType,
       getTypeText,
       isStarting,
-      allExecutorsAssigned,
       startProduction,
       isLoadingStatuses,
       loadOperationStatuses,

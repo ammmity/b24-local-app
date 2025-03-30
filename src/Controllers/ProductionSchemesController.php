@@ -2,6 +2,7 @@
 
 namespace App\Controllers;
 
+use App\Settings\SettingsInterface;
 use App\Entities\BitrixGroupKanbanStage;
 use App\Entities\ProductionScheme;
 use App\Entities\ProductionSchemeStage;
@@ -19,6 +20,7 @@ class ProductionSchemesController
         protected EntityManagerInterface $entityManager,
         protected CRestService $CRestService,
         protected ProductionSchemeService $productionSchemeService,
+        protected SettingsInterface $settings
     ) {}
 
     public function get(Request $request, Response $response, array $args): Response
@@ -63,7 +65,7 @@ class ProductionSchemesController
 
         if ($existingScheme) {
             $response->getBody()->write(json_encode(
-                ['error' => 'Production scheme already exists for this deal']
+                ['error' => 'Схема производства уже существует для данной сделки']
             ));
             return $response;
         }
@@ -73,7 +75,7 @@ class ProductionSchemesController
         if (isset($data['stages']) && is_array($data['stages'])) {
             foreach ($data['stages'] as $stageData) {
                 if (!$this->validateStageData($stageData)) {
-                    $response->getBody()->write(json_encode(['error' => 'Invalid stage data']));
+                    $response->getBody()->write(json_encode(['error' => 'Неизвестные данные этапа']));
                     return $response;
                 }
 
@@ -84,7 +86,7 @@ class ProductionSchemesController
 
                 if (!$productPart || !$operationType) {
                     $response->getBody()->write(json_encode(
-                        ['error' => 'Product part or operation type not found']
+                        ['error' => 'Не найдены данные детали или операции']
                     ));
                     return $response;
                 }
@@ -121,7 +123,7 @@ class ProductionSchemesController
 
         if (!$dealId) {
             $response->getBody()->write(json_encode(['error' => 'deal_id is required']));
-            return $response->withStatus(400)->withHeader('Content-Type', 'application/json');
+            return $response;
         }
 
         $currentUser = $this->CRestService->currentUser();
@@ -130,7 +132,7 @@ class ProductionSchemesController
             ->findOneBy(['dealId' => $dealId]);
 
         if (!$scheme) {
-            $response->getBody()->write(json_encode(['error' => 'Scheme not found']));
+            $response->getBody()->write(json_encode(['error' => 'Схема производства не найдена']));
             return $response;
         }
 
@@ -142,17 +144,13 @@ class ProductionSchemesController
             && $data['status'] === 'progress'
             && !isset($data['stages'])
         ) {
-            // Проверяем, что все этапы имеют исполнителей
             /** @var ProductionSchemeStage $stage */
             foreach ($scheme->getStages() as $stage) {
                 if (!$stage->getExecutorId()) {
-                    $response->getBody()->write(json_encode([
-                        'error' => 'Невозможно запустить производство: не все этапы имеют исполнителей'
-                    ]));
-                    return $response;
+                    $stage->setExecutorId($this->settings->get('b24')['SYSTEM_USER_ID']);
                 }
 
-                // При создании производства, к стадиям порядка 1 создаются задачи
+                // При создании производства, к первым стадиям создаются задачи
                 if ($stage->getStageNumber() == 1) {
                     $title = $stage->toArray()['operation_type']['name']
                         . ' / ' . $stage->toArray()['product_part']['name']
@@ -162,20 +160,24 @@ class ProductionSchemesController
                         'bitrix_group_id' => $groupId,
                         'stage_name' => 'В ожидании'
                     ]);
+                    
+                    $b24TaskFields = [
+                        'TITLE' => $title,
+                        'CREATED_BY' => $currentUser['ID'],
+                        'RESPONSIBLE_ID' => $stage->getExecutorId(),
+                        'STAGE_ID' => (int) $waitingStage->getStageId(),
+                        'GROUP_ID' => $groupId,
+                        'UF_CRM_TASK' => [
+                            'D_'.$dealId // Привязка к сделке
+                        ],
+                    ];
+
+                    if ((int) $stage->getExecutorId() === (int) $this->settings->get('b24')['SYSTEM_USER_ID']) {
+                        $b24TaskFields['ACCOMPLICES'] = array_map(fn($user) => $user['USER_ID'], $this->CRestService->getGroupUsers($groupId));
+                    }
 
                     $b24Task = $this->CRestService->addTask([
-                        'fields' => [
-                            'TITLE' => $title, // Название задачи
-                            //'DEADLINE' => '2023-12-31T23:59:59', // Крайний срок
-                            'CREATED_BY' => $currentUser['ID'], // Идентификатор постановщика
-                            'RESPONSIBLE_ID' => $stage->getExecutorId(), // Идентификатор исполнителя
-                            'STAGE_ID' => (int) $waitingStage->getStageId(), // Стадия
-                            'GROUP_ID' => $groupId, // Стадия
-                            // Пример передачи нескольких значений в поле UF_CRM_TASK
-                            'UF_CRM_TASK' => [
-                                'D_'.$dealId // Привязка к сделке
-                            ],
-                        ]
+                        'fields' => $b24TaskFields
                     ]);
                     $stage->setBitrixTaskId($b24Task['id']);
                     $stage->setStatus('В ожидании');
@@ -267,6 +269,20 @@ class ProductionSchemesController
 
 
         $response->getBody()->write(json_encode($scheme));
+        return $response;
+    }
+
+    public function updateSchemeStagesManually(Request $request, Response $response, array $args): Response
+    {
+        $taskId = $args['taskId'] ?? null;
+        if (empty($taskId)) {
+            $response->getBody()->write(json_encode(['error' => 'Не указан taskId']));
+            return $response;
+        }
+        
+        $this->productionSchemeService->updateSchemeStages($taskId);
+
+        $response->getBody()->write(json_encode(['success' => true]));
         return $response;
     }
 

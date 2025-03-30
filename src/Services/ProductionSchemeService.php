@@ -146,17 +146,24 @@ class ProductionSchemeService
                         'stage_name' => 'В ожидании'
                     ]);
 
+                    $b24TaskFields = [
+                        'TITLE' => $title, // Название задачи
+                        'CREATED_BY' => $currentUser['ID'], // Идентификатор постановщика
+                        'RESPONSIBLE_ID' => $nextStage->getExecutorId(), // Идентификатор исполнителя
+                        'STAGE_ID' => (int) $nextStageWaitingKanbanStage->getStageId(), // Стадия
+                        'GROUP_ID' => $nextStageGroupId, // Группа
+                        'UF_CRM_TASK' => [
+                            'D_'.$nextStage->getScheme()->getDealId() // Привязка к сделке
+                        ],
+                    ];
+
+                    if ((int) $nextStage->getExecutorId() === (int) $this->settings->get('b24')['SYSTEM_USER_ID']) {
+                        $b24TaskFields['ACCOMPLICES'] = array_map(fn($user) => $user['USER_ID'], $this->CRestService->getGroupUsers($nextStageGroupId));
+                    }
+
+
                     $b24Task = $this->CRestService->addTask([
-                        'fields' => [
-                            'TITLE' => $title, // Название задачи
-                            'CREATED_BY' => $currentUser['ID'], // Идентификатор постановщика
-                            'RESPONSIBLE_ID' => $nextStage->getExecutorId(), // Идентификатор исполнителя
-                            'STAGE_ID' => (int) $nextStageWaitingKanbanStage->getStageId(), // Стадия
-                            'GROUP_ID' => $nextStageGroupId, // Стадия
-                            'UF_CRM_TASK' => [
-                                'D_'.$nextStage->getScheme()->getDealId() // Привязка к сделке
-                            ],
-                        ]
+                        'fields' => $b24TaskFields
                     ]);
                     $nextStage->setBitrixTaskId($b24Task['id']);
                     $nextStage->setStatus('В ожидании');

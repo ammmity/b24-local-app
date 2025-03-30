@@ -2,13 +2,15 @@
 
 namespace App\Controllers;
 
+use App\Settings\SettingsInterface;
 use App\Services\CRestService;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 
 class UsersController {
     public function __construct(
-        protected CRestService $CRestService
+        protected CRestService $CRestService,
+        protected SettingsInterface $settings
     )
     {}
 
@@ -67,6 +69,14 @@ class UsersController {
         }
 
         $response->getBody()->write(json_encode($userResource));
+        return $response;
+    }
+
+    public function getSystemUser(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
+    {
+        $systemUserId = $this->settings->get('b24')['SYSTEM_USER_ID'];
+
+        $response->getBody()->write(json_encode($systemUserId));
         return $response;
     }
 }

@@ -58,6 +58,13 @@ class CRestService
         );
     }
 
+    public function getGroupUsers($groupId)
+    {
+        return $this->callMethod('sonet_group.user.get', [
+            'ID' => $groupId
+        ])['result'];
+    }
+
     /**
      * Получает стадии канбана
      *
