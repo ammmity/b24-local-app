@@ -38,9 +38,20 @@ class ProductionSchemeService
 
             $operationPrice = $this->entityManager
                 ->getRepository(OperationPrice::class)
-                ->findOneBy(['operationType' => $stageData['operation_type']['id']]);
+                ->findOneBy([
+                    'operationType' => $stageData['operation_type']['id'],
+                    'productPart' => $stageData['product_part']['id']
+                ]);
 
-            $price = $operationPrice ? $operationPrice->getPrice() * (int)$stageData['quantity']  : 0;
+            // Если не нашли специфичную цену для детали, ищем общую цену для операции
+            if (!$operationPrice) {
+                $operationPrice = $this->entityManager
+                    ->getRepository(OperationPrice::class)
+                    ->findOneBy([
+                        'operationType' => $stageData['operation_type']['id'],
+                        'productPart' => null
+                    ]);
+            }
 
             $operationLog = new OperationLog(
                 taskLink: "https://furama.crm-kmz.ru/company/personal/user/{$completedStage->getExecutorId()}/tasks/task/view/{$completedStage->getBitrixTaskId()}/",
@@ -51,7 +62,7 @@ class ProductionSchemeService
                 quantity: (int)$stageData['quantity'],
                 username: $user[0]['NAME'] . ' ' . $user[0]['LAST_NAME'],
                 userId: (int)$user[0]['ID'],
-                price: $price ?? 0,
+                price: $operationPrice ? $operationPrice->getPrice() : 0,
                 operation: $stageData['operation_type']['name']
             );
 

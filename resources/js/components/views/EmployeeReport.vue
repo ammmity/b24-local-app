@@ -60,13 +60,18 @@
     <!-- Детальная информация -->
     <el-table
       v-if="report.details"
-      :data="report.details"
+      :data="sortedDetails"
       border
       style="margin-top: 20px;"
     >
-      <el-table-column prop="date" label="Дата" />
+      <el-table-column prop="date" label="Дата">
+        <template #default="{ row }">
+          {{ formatDate(row.date) }}
+        </template>
+      </el-table-column>
       <el-table-column prop="employee" label="Сотрудник" />
       <el-table-column prop="detail" label="Деталь" />
+      <el-table-column prop="operation" label="Операция" />
       <el-table-column prop="quantity" label="Количество" align="right" />
       <el-table-column prop="price" label="Цена" align="right">
         <template #default="{ row }">
@@ -116,8 +121,8 @@ export default defineComponent({
 
     const exportToExcel = () => {
       // Подготовка данных для детального отчета с русскими заголовками
-      const detailsData = report.value.details.map(item => ({
-        'Дата': item.date,
+      const detailsData = sortedDetails.value.map(item => ({
+        'Дата': formatDate(item.date),
         'Сотрудник': item.employee,
         'Деталь': item.detail,
         'Операция': item.operation,
@@ -152,11 +157,31 @@ export default defineComponent({
       }).format(value)
     }
 
+    const formatDate = (dateString) => {
+      if (!dateString) return '';
+      const date = new Date(dateString);
+      return date.toLocaleString('ru-RU', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      }).replace(',', '');
+    };
+
     const summaryData = computed(() => {
       return Object.entries(report.value.summary || {}).map(([employee, amount]) => ({
         employee,
         amount
       }))
+    })
+
+    const sortedDetails = computed(() => {
+      if (!report.value.details) return [];
+      return [...report.value.details].sort((a, b) => {
+        return new Date(b.date) - new Date(a.date);
+      });
     })
 
     const fetchUsers = async () => {
@@ -183,7 +208,9 @@ export default defineComponent({
       generateReport,
       exportToExcel,
       formatCurrency,
-      summaryData
+      summaryData,
+      formatDate,
+      sortedDetails
     }
   }
 })

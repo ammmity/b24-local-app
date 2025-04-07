@@ -4,6 +4,7 @@ namespace App\Controllers;
 
 use App\Entities\OperationPrice;
 use App\Entities\OperationType;
+use App\Entities\ProductPart;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
@@ -17,13 +18,10 @@ class OperationPricesController
 
     public function list(Request $request, Response $response): Response
     {
-        $operationPrices = $this->entityManager->getRepository(OperationPrice::class)->findAll();
-        $result = [];
-        foreach ($operationPrices as $operationPrice) {
-            $result[] = $operationPrice->toArray();
-        }
+        $prices = $this->entityManager->getRepository(OperationPrice::class)->findAll();
+        $data = array_map(fn(OperationPrice $price) => $price->toArray(), $prices);
 
-        $response->getBody()->write(json_encode($result));
+        $response->getBody()->write(json_encode($data));
         return $response;
     }
 
@@ -45,27 +43,51 @@ class OperationPricesController
     {
         $data = json_decode($request->getBody()->getContents(), true);
 
+        // Проверяем обязательные поля
         if (!isset($data['operation_type_id']) || !isset($data['price'])) {
-            $response->getBody()->write(json_encode(['error' => 'Missing required fields']));
+            $response->getBody()->write(json_encode(['error' => 'Не указаны обязательные поля'] ));
             return $response->withStatus(400);
         }
 
-        $operationTypeId = (int)$data['operation_type_id'];
-        $price = (int)$data['price'];
-
-        $operationType = $this->entityManager->getRepository(OperationType::class)->find($operationTypeId);
-
+        // Получаем тип операции
+        $operationType = $this->entityManager->find(OperationType::class, $data['operation_type_id']);
         if (!$operationType) {
-            $response->getBody()->write(json_encode(['error' => 'Operation type not found']));
-            return $response->withStatus(404);
+            $response->getBody()->write(json_encode(['error' => 'Тип операции не найден']));
+            return $response;
         }
 
-        $operationPrice = new OperationPrice($operationType, $price);
+        // Получаем деталь, если указана
+        $productPart = null;
+        if (isset($data['product_part_id'])) {
+            $productPart = $this->entityManager->find(ProductPart::class, $data['product_part_id']);
+            if (!$productPart) {
+                $response->getBody()->write(json_encode(['error' => 'Деталь не найдена']));
+                return $response;
+            }
+        }
 
-        $this->entityManager->persist($operationPrice);
+        // Проверяем уникальность комбинации
+        $existingPrice = $this->entityManager->getRepository(OperationPrice::class)->findOneBy([
+            'operationType' => $operationType,
+            'productPart' => $productPart
+        ]);
+
+        if ($existingPrice) {
+            $response->getBody()->write(json_encode(['error' => 'Цена для этой комбинации операции и детали уже существует']));
+            return $response->withStatus(422);
+        }
+
+        // Создаем новую цену
+        $price = new OperationPrice(
+            $operationType,
+            $data['price'],
+            $productPart
+        );
+
+        $this->entityManager->persist($price);
         $this->entityManager->flush();
 
-        $response->getBody()->write(json_encode($operationPrice->toArray()));
+        $response->getBody()->write(json_encode($price->toArray()));
         return $response->withStatus(201);
     }
 
@@ -76,28 +98,47 @@ class OperationPricesController
 
         $operationPrice = $this->entityManager->getRepository(OperationPrice::class)->find($id);
 
-        if (!$operationPrice) {
-            $response->getBody()->write(json_encode(['error' => 'Operation price not found']));
-            return $response->withStatus(404);
-        }
-
         if (isset($data['operation_type_id'])) {
-            $operationTypeId = (int)$data['operation_type_id'];
-            $operationType = $this->entityManager->getRepository(OperationType::class)->find($operationTypeId);
-
+            $operationType = $this->entityManager->find(OperationType::class, $data['operation_type_id']);
             if (!$operationType) {
-                $response->getBody()->write(json_encode(['error' => 'Operation type not found']));
-                return $response->withStatus(404);
+                return $response->withStatus(404)->withJson([
+                    'error' => 'Тип операции не найден'
+                ]);
             }
-
             $operationPrice->setOperationType($operationType);
         }
 
-        if (isset($data['price'])) {
-            $operationPrice->setPrice((int)$data['price']);
+        // Обработка детали
+        if (array_key_exists('product_part_id', $data)) {
+            $productPart = null;
+            if ($data['product_part_id'] !== null) {
+                $productPart = $this->entityManager->find(ProductPart::class, $data['product_part_id']);
+                if (!$productPart) {
+                    return $response->withStatus(404)->withJson([
+                        'error' => 'Деталь не найдена'
+                    ]);
+                }
+            }
+
+            // Проверяем уникальность комбинации
+            $existingPrice = $this->entityManager->getRepository(OperationPrice::class)->findOneBy([
+                'operationType' => $operationPrice->getOperationType(),
+                'productPart' => $productPart
+            ]);
+
+            if ($existingPrice && $existingPrice->getId() !== $operationPrice->getId()) {
+                return $response->withStatus(422)->withJson([
+                    'error' => 'Цена для этой комбинации операции и детали уже существует'
+                ]);
+            }
+
+            $operationPrice->setProductPart($productPart);
         }
 
-        $this->entityManager->persist($operationPrice);
+        if (isset($data['price'])) {
+            $operationPrice->setPrice($data['price']);
+        }
+
         $this->entityManager->flush();
 
         $response->getBody()->write(json_encode($operationPrice->toArray()));

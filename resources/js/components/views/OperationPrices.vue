@@ -27,6 +27,11 @@
           {{ row.operation_type.machine }}
         </template>
       </el-table-column>
+      <el-table-column label="Деталь">
+        <template #default="{ row }">
+          {{ row.detail_name || 'Общая цена' }}
+        </template>
+      </el-table-column>
       <el-table-column label="Цена">
         <template #default="{ row }">
           {{ row.price }} ₽
@@ -79,6 +84,22 @@
           </el-select>
         </el-form-item>
 
+        <el-form-item label="Деталь">
+          <el-select
+            v-model="createForm.product_part_id"
+            placeholder="Выберите деталь (необязательно)"
+            filterable
+            clearable
+          >
+            <el-option
+              v-for="part in details"
+              :key="part.id"
+              :label="part.name"
+              :value="part.id"
+            />
+          </el-select>
+        </el-form-item>
+
         <el-form-item label="Цена" prop="price">
           <el-input-number
             v-model="createForm.price"
@@ -119,6 +140,22 @@
               :key="type.id"
               :label="`${type.name} (${type.machine})`"
               :value="type.id"
+            />
+          </el-select>
+        </el-form-item>
+
+        <el-form-item label="Деталь">
+          <el-select
+            v-model="editForm.product_part_id"
+            placeholder="Выберите деталь (необязательно)"
+            filterable
+            clearable
+          >
+            <el-option
+              v-for="part in details"
+              :key="part.id"
+              :label="part.name"
+              :value="part.id"
             />
           </el-select>
         </el-form-item>
@@ -175,15 +212,18 @@ export default defineComponent({
     const createFormRef = ref(null);
     const editFormRef = ref(null);
     const deleteItem = ref(null);
+    const details = ref([]);
 
     const createForm = ref({
       operation_type_id: '',
+      product_part_id: null,
       price: 0
     });
 
     const editForm = ref({
       id: null,
       operation_type_id: '',
+      product_part_id: null,
       price: 0
     });
 
@@ -215,33 +255,42 @@ export default defineComponent({
       }
     };
 
+    const fetchDetails = async () => {
+      try {
+        const response = await apiClient.get('/product-parts');
+        details.value = response.data.map(part => ({
+          id: part.id,
+          name: part.name || part.title || 'Без названия'
+        }));
+      } catch (err) {
+        error.value = 'Ошибка при получении списка деталей: ' + err.message;
+      }
+    };
+
     const submitCreate = async () => {
       if (!createFormRef.value) return;
 
       await createFormRef.value.validate(async (valid) => {
         if (valid) {
           try {
-            // Проверяем, существует ли уже цена для этого типа операции
+            // Проверяем существование цены для комбинации операции и детали
             const existingPrice = operationPrices.value.find(
-              price => price.operation_type_id === createForm.value.operation_type_id
+              price => price.operation_type_id === createForm.value.operation_type_id &&
+                      price.product_part_id === createForm.value.product_part_id
             );
             
             if (existingPrice) {
-              ElMessage.error('Цена для этой операции уже существует');
+              ElMessage.error('Цена для этой комбинации операции и детали уже существует');
               return;
             }
 
             await apiClient.post('/operation-prices', createForm.value);
             ElMessage.success('Цена операции успешно добавлена');
             showCreateModal.value = false;
-            createForm.value = { operation_type_id: '', price: 0 };
+            createForm.value = { operation_type_id: '', product_part_id: null, price: 0 };
             await fetchOperationPrices();
           } catch (error) {
-            if (error.response?.status === 422) {
-              ElMessage.error('Цена для этой операции уже существует');
-            } else {
-              ElMessage.error(error.response?.data?.error || 'Произошла ошибка при создании');
-            }
+            ElMessage.error(error.response?.data?.error || 'Произошла ошибка при создании');
           }
         }
       });
@@ -251,6 +300,7 @@ export default defineComponent({
       editForm.value = {
         id: row.id,
         operation_type_id: row.operation_type_id,
+        product_part_id: row.product_part_id,
         price: row.price
       };
       showEditModal.value = true;
@@ -262,30 +312,28 @@ export default defineComponent({
       await editFormRef.value.validate(async (valid) => {
         if (valid) {
           try {
-            // Проверяем, существует ли уже цена для этого типа операции (исключая текущую запись)
+            // Проверяем существование цены для комбинации операции и детали
             const existingPrice = operationPrices.value.find(
-              price => price.operation_type_id === editForm.value.operation_type_id && 
-                       price.id !== editForm.value.id
+              price => price.operation_type_id === editForm.value.operation_type_id &&
+                      price.product_part_id === editForm.value.product_part_id &&
+                      price.id !== editForm.value.id
             );
             
             if (existingPrice) {
-              ElMessage.error('Цена для этой операции уже существует');
+              ElMessage.error('Цена для этой комбинации операции и детали уже существует');
               return;
             }
 
             await apiClient.patch(`/operation-prices/${editForm.value.id}`, {
               operation_type_id: editForm.value.operation_type_id,
+              product_part_id: editForm.value.product_part_id,
               price: editForm.value.price
             });
             ElMessage.success('Цена операции успешно обновлена');
             showEditModal.value = false;
             await fetchOperationPrices();
           } catch (error) {
-            if (error.response?.status === 422) {
-              ElMessage.error('Цена для этой операции уже существует');
-            } else {
-              ElMessage.error(error.response?.data?.error || 'Произошла ошибка при обновлении');
-            }
+            ElMessage.error(error.response?.data?.error || 'Произошла ошибка при обновлении');
           }
         }
       });
@@ -310,7 +358,8 @@ export default defineComponent({
     onMounted(async () => {
       await Promise.all([
         fetchOperationPrices(),
-        fetchOperationTypes()
+        fetchOperationTypes(),
+        fetchDetails()
       ]);
     });
 
@@ -331,7 +380,8 @@ export default defineComponent({
       submitEdit,
       handleDelete,
       confirmDelete,
-      deleteItem
+      deleteItem,
+      details,
     };
   }
 });
