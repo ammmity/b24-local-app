@@ -81,7 +81,11 @@ class ProductionSchemeService
             $stage = $this->entityManager->getRepository(ProductionSchemeStage::class)
                 ->findOneBy(['bitrixTaskId' => $taskId]);
             $groupId = $stage->toArray()['operation_type']['bitrix_group_id'];
-            $bitrix24Task = $this->CRestService->getTask($stage->getBitrixTaskId(), ['ID', 'STAGE_ID', 'STATUS']);
+            $bitrix24Task = $this->CRestService->getTask($stage->getBitrixTaskId(), ['ID', 'STAGE_ID', 'STATUS', 'RESPONSIBLE_ID']);
+
+            if ($stage->getExecutorId() != $bitrix24Task['responsibleId']) {
+                $stage->setExecutorId($bitrix24Task['responsibleId']);
+            }
 
             $kanbanStage = $this->entityManager->getRepository(BitrixGroupKanbanStage::class)->findOneBy([
                 'bitrix_group_id' => $groupId,
@@ -229,11 +233,15 @@ class ProductionSchemeService
             }
 
             $groupId = $stage->toArray()['operation_type']['bitrix_group_id'];
-            $bitrix24Task = $this->CRestService->getTask($stage->getBitrixTaskId(), ['ID', 'STAGE_ID']);
+            $bitrix24Task = $this->CRestService->getTask($stage->getBitrixTaskId(), ['ID', 'STAGE_ID', 'RESPONSIBLE_ID']);
             $kanbanStage = $this->entityManager->getRepository(BitrixGroupKanbanStage::class)->findOneBy([
                 'bitrix_group_id' => $groupId,
                 'stage_id' => $bitrix24Task['stageId']
             ]);
+
+            if ($stage->getExecutorId() != $bitrix24Task['responsibleId']) {
+                $stage->setExecutorId($bitrix24Task['responsibleId']);
+            }
 
             $stage->setStatus($kanbanStage->getStageName());
         }
