@@ -138,6 +138,7 @@ class ProductionSchemesController
 
         $data = json_decode($request->getBody()->getContents(), true);
 
+
         // Запустить производство
         if (
             isset($data['status'])
@@ -160,7 +161,7 @@ class ProductionSchemesController
                         'bitrix_group_id' => $groupId,
                         'stage_name' => 'В ожидании'
                     ]);
-                    
+
                     $b24TaskFields = [
                         'TITLE' => $title,
                         'CREATED_BY' => $currentUser['ID'],
@@ -279,7 +280,7 @@ class ProductionSchemesController
             $response->getBody()->write(json_encode(['error' => 'Не указан taskId']));
             return $response;
         }
-        
+
         $this->productionSchemeService->updateSchemeStages($taskId);
 
         $response->getBody()->write(json_encode(['success' => true]));
