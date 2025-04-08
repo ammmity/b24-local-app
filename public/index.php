@@ -122,12 +122,13 @@ $app->group('/app/', function (RouteCollectorProxy $group) {
     $group->any('install/', [InstallB24AppController::class, 'install'])->setName('install-as-b24-app');
 });
 
-$app->group('/api/', function (RouteCollectorProxy $group) {
+$app->group('/api/', function (RouteCollectorProxy $group) use ($container) {
 //    $group->any('deals', [DealsController::class, 'list'])->setName('deals-list');
     $group->any('deals/{id}', [DealsController::class, 'get'])->setName('deal-resource');
 
     $group->any('users', [UsersController::class, 'list'])->setName('users-list');
     $group->any('users/{id}', [UsersController::class, 'get'])->setName('user-resource');
+    $group->get('system-user', [UsersController::class, 'getSystemUser'])->setName('get-system-user-id'); // Получает id системного пользователя
 
     $group->get('production-schemes/{id}', [ProductionSchemesController::class, 'get'])->setName('get-deal-production-scheme');
     $group->post('production-schemes', [ProductionSchemesController::class, 'store'])->setName('deal-production-scheme-resource');
@@ -187,6 +188,17 @@ $app->group('/api/', function (RouteCollectorProxy $group) {
     // Отчеты
     $group->get('reports/employee-operations', [ReportsController::class, 'employeeOperations'])->setName('employee-operations-report');
     $group->get('reports/operation-users', [ReportsController::class, 'getOperationUsers'])->setName('operation-users-report');
+
+    // for testing purposes
+//    $group->get('update-scheme-stages-manually/{taskId}', [ProductionSchemesController::class, 'updateSchemeStagesManually'])->setName('update-scheme-stages-manually');
+//
+//    $group->get('test', function (Request $request, Response $response, $args) use ($container) {
+//
+//        $CRestService = $container->get(CRestService::class);
+//        $result = $CRestService->getGroupUsers(1);
+//        $response->getBody()->write(json_encode($result));
+//        return $response;
+//    });
 });
 
 $app->get('/fill-log', function (Request $request, Response $response, $args) use ($container) {

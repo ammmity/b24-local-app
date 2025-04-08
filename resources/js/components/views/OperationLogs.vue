@@ -91,6 +91,11 @@
           {{ row.price }} ₽
         </template>
       </el-table-column>
+      <el-table-column label="Сумма">
+        <template #default="{ row }">
+          {{ row.sum }} ₽
+        </template>
+      </el-table-column>
     </el-table>
     
     <div v-else-if="!loading && (!operationLogs || operationLogs.length === 0)" class="no-data">

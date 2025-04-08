@@ -38,9 +38,20 @@ class ProductionSchemeService
 
             $operationPrice = $this->entityManager
                 ->getRepository(OperationPrice::class)
-                ->findOneBy(['operationType' => $stageData['operation_type']['id']]);
+                ->findOneBy([
+                    'operationType' => $stageData['operation_type']['id'],
+                    'productPart' => $stageData['product_part']['id']
+                ]);
 
-            $price = $operationPrice ? $operationPrice->getPrice() * (int)$stageData['quantity']  : 0;
+            // Если не нашли специфичную цену для детали, ищем общую цену для операции
+            if (!$operationPrice) {
+                $operationPrice = $this->entityManager
+                    ->getRepository(OperationPrice::class)
+                    ->findOneBy([
+                        'operationType' => $stageData['operation_type']['id'],
+                        'productPart' => null
+                    ]);
+            }
 
             $operationLog = new OperationLog(
                 taskLink: "https://furama.crm-kmz.ru/company/personal/user/{$completedStage->getExecutorId()}/tasks/task/view/{$completedStage->getBitrixTaskId()}/",
@@ -51,7 +62,7 @@ class ProductionSchemeService
                 quantity: (int)$stageData['quantity'],
                 username: $user[0]['NAME'] . ' ' . $user[0]['LAST_NAME'],
                 userId: (int)$user[0]['ID'],
-                price: $price ?? 0,
+                price: $operationPrice ? $operationPrice->getPrice() : 0,
                 operation: $stageData['operation_type']['name']
             );
 
@@ -70,7 +81,11 @@ class ProductionSchemeService
             $stage = $this->entityManager->getRepository(ProductionSchemeStage::class)
                 ->findOneBy(['bitrixTaskId' => $taskId]);
             $groupId = $stage->toArray()['operation_type']['bitrix_group_id'];
-            $bitrix24Task = $this->CRestService->getTask($stage->getBitrixTaskId(), ['ID', 'STAGE_ID', 'STATUS']);
+            $bitrix24Task = $this->CRestService->getTask($stage->getBitrixTaskId(), ['ID', 'STAGE_ID', 'STATUS', 'RESPONSIBLE_ID']);
+
+            if ($stage->getExecutorId() != $bitrix24Task['responsibleId']) {
+                $stage->setExecutorId($bitrix24Task['responsibleId']);
+            }
 
             $kanbanStage = $this->entityManager->getRepository(BitrixGroupKanbanStage::class)->findOneBy([
                 'bitrix_group_id' => $groupId,
@@ -146,17 +161,24 @@ class ProductionSchemeService
                         'stage_name' => 'В ожидании'
                     ]);
 
+                    $b24TaskFields = [
+                        'TITLE' => $title, // Название задачи
+                        'CREATED_BY' => $currentUser['ID'], // Идентификатор постановщика
+                        'RESPONSIBLE_ID' => $nextStage->getExecutorId(), // Идентификатор исполнителя
+                        'STAGE_ID' => (int) $nextStageWaitingKanbanStage->getStageId(), // Стадия
+                        'GROUP_ID' => $nextStageGroupId, // Группа
+                        'UF_CRM_TASK' => [
+                            'D_'.$nextStage->getScheme()->getDealId() // Привязка к сделке
+                        ],
+                    ];
+
+                    if ((int) $nextStage->getExecutorId() === (int) $this->settings->get('b24')['SYSTEM_USER_ID']) {
+                        $b24TaskFields['ACCOMPLICES'] = array_map(fn($user) => $user['USER_ID'], $this->CRestService->getGroupUsers($nextStageGroupId));
+                    }
+
+
                     $b24Task = $this->CRestService->addTask([
-                        'fields' => [
-                            'TITLE' => $title, // Название задачи
-                            'CREATED_BY' => $currentUser['ID'], // Идентификатор постановщика
-                            'RESPONSIBLE_ID' => $nextStage->getExecutorId(), // Идентификатор исполнителя
-                            'STAGE_ID' => (int) $nextStageWaitingKanbanStage->getStageId(), // Стадия
-                            'GROUP_ID' => $nextStageGroupId, // Стадия
-                            'UF_CRM_TASK' => [
-                                'D_'.$nextStage->getScheme()->getDealId() // Привязка к сделке
-                            ],
-                        ]
+                        'fields' => $b24TaskFields
                     ]);
                     $nextStage->setBitrixTaskId($b24Task['id']);
                     $nextStage->setStatus('В ожидании');
@@ -211,11 +233,15 @@ class ProductionSchemeService
             }
 
             $groupId = $stage->toArray()['operation_type']['bitrix_group_id'];
-            $bitrix24Task = $this->CRestService->getTask($stage->getBitrixTaskId(), ['ID', 'STAGE_ID']);
+            $bitrix24Task = $this->CRestService->getTask($stage->getBitrixTaskId(), ['ID', 'STAGE_ID', 'RESPONSIBLE_ID']);
             $kanbanStage = $this->entityManager->getRepository(BitrixGroupKanbanStage::class)->findOneBy([
                 'bitrix_group_id' => $groupId,
                 'stage_id' => $bitrix24Task['stageId']
             ]);
+
+            if ($stage->getExecutorId() != $bitrix24Task['responsibleId']) {
+                $stage->setExecutorId($bitrix24Task['responsibleId']);
+            }
 
             $stage->setStatus($kanbanStage->getStageName());
         }

@@ -24,6 +24,7 @@ return [
         'PRODUCTION_STORE_ID' => 1,
         'DETAILS_STORE_ID' => 2,
         'VIRTUAL_STORE_ID' => 3,
+        'SYSTEM_USER_ID' => 1, // ID системного пользователя, для инициализации задач без исполнителя
     ],
     'environment' => 'dev' // prod
 ];

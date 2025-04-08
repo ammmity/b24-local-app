@@ -44,6 +44,9 @@ class OperationLog
     #[ORM\Column(type: 'integer', nullable: false)]
     private int $price;
 
+    #[ORM\Column(type: 'integer', nullable: true)]
+    private ?int $sum = null;
+
     #[ORM\Column(type: 'string', nullable: false)]
     private string $operation;
 
@@ -187,6 +190,17 @@ class OperationLog
         return $this;
     }
 
+    public function getSum(): ?int
+    {
+        return $this->sum;
+    }
+
+    public function setSum(?int $sum): self
+    {
+        $this->sum = $sum;
+        return $this;
+    }
+
     public function getOperation(): string
     {
         return $this->operation;
@@ -212,6 +226,7 @@ class OperationLog
             'username' => $this->username,
             'user_id' => $this->userId,
             'price' => $this->price,
+            'sum' => $this->price * $this->quantity,
             'operation' => $this->operation,
         ];
     }
