@@ -43,12 +43,12 @@ class B24EventsController
 
         try {
             if ($postData['event'] === 'ONTASKUPDATE') {
-//                $logData = print_r($postData, 1);
-//                $logDir = dirname(__DIR__, 2) . '/logs';
-//                if (!is_dir($logDir)) {
-//                    mkdir($logDir, 0755, true);
-//                }
-//                file_put_contents($logDir . '/taskUpdatedHandler.log', $logData, FILE_APPEND);
+                $logData = print_r($postData, 1);
+                $logDir = dirname(__DIR__, 2) . '/logs';
+                if (!is_dir($logDir)) {
+                    mkdir($logDir, 0755, true);
+                }
+                file_put_contents($logDir . '/taskUpdatedHandler123.log', $logData, FILE_APPEND);
 
                 $this->productionSchemeService->updateSchemeStages($taskId);
             }

@@ -6,7 +6,7 @@ use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity]
 #[ORM\Table(name: 'operation_prices')]
-#[ORM\UniqueConstraint(name: "unique_operation_type", columns: ["operation_type_id"])]
+#[ORM\UniqueConstraint(name: "unique_operation_detail", columns: ["operation_type_id", "product_part_id"])]
 class OperationPrice
 {
     #[ORM\Id]
@@ -18,15 +18,21 @@ class OperationPrice
     #[ORM\JoinColumn(name: "operation_type_id", nullable: false)]
     private OperationType $operationType;
 
+    #[ORM\ManyToOne(targetEntity: ProductPart::class)]
+    #[ORM\JoinColumn(name: "product_part_id", nullable: true)]
+    private ?ProductPart $productPart = null;
+
     #[ORM\Column(type: 'integer')]
     private int $price;
 
     public function __construct(
         OperationType $operationType,
-        int $price
+        int $price,
+        ?ProductPart $productPart = null
     ) {
         $this->operationType = $operationType;
         $this->price = $price;
+        $this->productPart = $productPart;
     }
 
     public function getId(): ?int
@@ -42,6 +48,17 @@ class OperationPrice
     public function setOperationType(OperationType $operationType): self
     {
         $this->operationType = $operationType;
+        return $this;
+    }
+
+    public function getProductPart(): ?ProductPart
+    {
+        return $this->productPart;
+    }
+
+    public function setProductPart(?ProductPart $productPart): self
+    {
+        $this->productPart = $productPart;
         return $this;
     }
 
@@ -61,6 +78,8 @@ class OperationPrice
         return [
             'id' => $this->id,
             'operation_type_id' => $this->operationType->getId(),
+            'product_part_id' => $this->productPart?->getId(),
+            'detail_name' => $this->productPart?->getName(),
             'price' => $this->price,
             'operation_type' => $this->operationType->toArray()
         ];
