@@ -7,7 +7,6 @@
 ### Backend
 - **PHP 8.1 +**
 - **Slim 4** — фреймворк для создания API.
-- **Phinx** — миграции базы данных.
 - **Doctrine ORM** — работа с базой данных, только orm, не бандл.
 - **PHP-DI** — контейнер для внедрения зависимостей.
 - **Twig** — шаблонизатор для генерации HTML.
@@ -21,9 +20,8 @@
 ### backend
 - `composer install`
 - `cp config/settings.example.php config/settings.php`
-- заполнить подключение к бд в phinx.php, config/settings.php, 
+- заполнить подключение к бд в config/settings.php
 - `./bin/doctrine orm:schema-tool:update --force`
-- `vendor/bin/phinx migrate -e development`
 - `./bin/doctrine orm:generate-proxies`
 
 ### frontend
@@ -41,9 +39,11 @@
 2. placement
 3. catalog
 4. user
-5. socialnetwork
-6. tasks
 7. task
+6. tasks
+6. tasks_extended
+5. socialnetwork
+8. sonet_group
 
 ### Локальное приложение
 1. Укажите путь к вашему обработчику:  

@@ -9,6 +9,7 @@ return [
         'driver' => '',
         'port' => '',
     ],
+    'appUrl' => 'http://example.com/', // Ссылка на Б24
     'b24' => [
         'appId' => '',
         'appKey' => '',
