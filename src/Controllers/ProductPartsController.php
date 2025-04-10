@@ -3,10 +3,11 @@
 namespace App\Controllers;
 
 use App\Entities\ProductPart;
+use App\Entities\GoodPart;
 use App\Services\CRestService;
 use App\Settings\SettingsInterface;
-use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\EntityManagerInterface;
+use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 
@@ -66,6 +67,44 @@ class ProductPartsController {
         $response->getBody()->write(json_encode($productPart->toArray()));
 
         return $response;
+    }
+
+    public function delete(RequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
+    {
+        $productPart = $this->entityManager->getRepository(ProductPart::class)->find($args['id']);
+
+        if (!$productPart) {
+            $response->getBody()->write(json_encode(['error' => 'Деталь не найдена']));
+            return $response;
+        }
+
+        // Проверяем, используется ли деталь в других таблицах
+        $isUsed = $this->entityManager->getRepository(GoodPart::class)
+            ->findOneBy(['productPart' => $productPart]);
+
+        if ($isUsed) {
+            $response->getBody()->write(json_encode([
+                'error' => 'Невозможно удалить деталь, так как она используется в товарах. Сначала удалите все связи с товарами.'
+            ]));
+            return $response;
+        }
+
+        try {
+            $this->entityManager->remove($productPart);
+            $this->entityManager->flush();
+
+            $response->getBody()->write(json_encode([
+                'success' => true,
+                'message' => 'Деталь успешно удалена'
+            ]));
+            return $response;
+
+        } catch (\Exception $e) {
+            $response->getBody()->write(json_encode([
+                'error' => 'Ошибка при удалении детали'
+            ]));
+            return $response;
+        }
     }
 
     public function import(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
