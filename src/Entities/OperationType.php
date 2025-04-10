@@ -17,7 +17,7 @@ class OperationType
     #[Column(type: 'string', unique: true, nullable: false)]
     private $name;
 
-    #[Column(type: 'string', unique: true, nullable: false)]
+    #[Column(type: 'string', unique: false, nullable: false)]
     private $machine;
 
     #[Column(type: 'string', nullable: false)]
