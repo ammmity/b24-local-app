@@ -30,6 +30,24 @@
           {{ getBitrixGroupName(row.bitrix_group_id) }}
         </template>
       </el-table-column>
+      <el-table-column label="Действия" width="200">
+        <template #default="{ row }">
+          <el-button
+            type="primary"
+            size="small"
+            @click="handleEdit(row)"
+          >
+            Изменить
+          </el-button>
+          <el-button
+            type="danger"
+            size="small"
+            @click="handleDelete(row)"
+          >
+            Удалить
+          </el-button>
+        </template>
+      </el-table-column>
     </el-table>
 
     <!-- Модальное окно создания -->
@@ -70,6 +88,60 @@
       <template #footer>
         <el-button @click="showCreateModal = false">Отмена</el-button>
         <el-button type="primary" @click="submitCreate">Создать</el-button>
+      </template>
+    </el-dialog>
+
+    <!-- Добавляем модальное окно редактирования -->
+    <el-dialog
+      v-model="showEditModal"
+      title="Редактирование типа операции"
+      width="500px"
+    >
+      <el-form
+        ref="editFormRef"
+        :model="editForm"
+        :rules="formRules"
+        label-width="160px"
+      >
+        <el-form-item label="Операция" prop="name">
+          <el-input v-model="editForm.name" />
+        </el-form-item>
+
+        <el-form-item label="Рабочее место" prop="machine">
+          <el-input v-model="editForm.machine" />
+        </el-form-item>
+
+        <el-form-item label="Группа Bitrix" prop="bitrix_group_id">
+          <el-select 
+            v-model="editForm.bitrix_group_id" 
+            placeholder="Выберите группу"
+          >
+            <el-option
+              v-for="group in bitrixGroups"
+              :key="group.id"
+              :label="group.name"
+              :value="group.id"
+            />
+          </el-select>
+        </el-form-item>
+      </el-form>
+
+      <template #footer>
+        <el-button @click="showEditModal = false">Отмена</el-button>
+        <el-button type="primary" @click="submitEdit">Сохранить</el-button>
+      </template>
+    </el-dialog>
+
+    <!-- Добавляем модальное окно подтверждения удаления -->
+    <el-dialog
+      v-model="showDeleteConfirm"
+      title="Подтверждение удаления"
+      width="400px"
+    >
+      <p>Вы действительно хотите удалить тип операции "{{ deleteItem?.name }}"?</p>
+      <template #footer>
+        <el-button @click="showDeleteConfirm = false">Отмена</el-button>
+        <el-button type="danger" @click="confirmDelete">Удалить</el-button>
       </template>
     </el-dialog>
 
@@ -177,6 +249,55 @@ export default defineComponent({
       return group ? group.name : 'Не найдена';
     };
 
+    const showEditModal = ref(false);
+    const showDeleteConfirm = ref(false);
+    const editFormRef = ref(null);
+    const deleteItem = ref(null);
+    const editForm = ref({
+      id: null,
+      name: '',
+      machine: '',
+      bitrix_group_id: ''
+    });
+
+    const handleEdit = (row) => {
+      editForm.value = { ...row };
+      showEditModal.value = true;
+    };
+
+    const submitEdit = async () => {
+      if (!editFormRef.value) return;
+
+      await editFormRef.value.validate(async (valid) => {
+        if (valid) {
+          try {
+            await apiClient.patch(`/operation-types/${editForm.value.id}`, editForm.value);
+            ElMessage.success('Тип операции успешно обновлен');
+            showEditModal.value = false;
+            await fetchOperationTypes();
+          } catch (error) {
+            ElMessage.error(error.response?.data?.error || 'Ошибка при обновлении');
+          }
+        }
+      });
+    };
+
+    const handleDelete = (row) => {
+      deleteItem.value = row;
+      showDeleteConfirm.value = true;
+    };
+
+    const confirmDelete = async () => {
+      try {
+        await apiClient.delete(`/operation-types/${deleteItem.value.id}`);
+        ElMessage.success('Тип операции успешно удален');
+        showDeleteConfirm.value = false;
+        await fetchOperationTypes();
+      } catch (error) {
+        ElMessage.error(error.response?.data?.error || 'Ошибка при удалении');
+      }
+    };
+
     onMounted(async () => {
       await Promise.all([
         fetchOperationTypes(),
@@ -195,7 +316,16 @@ export default defineComponent({
       formRules,
       submitCreate,
       bitrixGroups,
-      getBitrixGroupName
+      getBitrixGroupName,
+      showEditModal,
+      showDeleteConfirm,
+      editFormRef,
+      editForm,
+      deleteItem,
+      handleEdit,
+      submitEdit,
+      handleDelete,
+      confirmDelete
     };
   }
 });

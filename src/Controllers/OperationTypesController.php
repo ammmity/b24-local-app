@@ -124,18 +124,45 @@ class OperationTypesController {
 
     public function update(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
     {
-        $data = $request->getParsedBody();
+        $id = (int)$args['id'];
+        $data = json_decode($request->getBody()->getContents(), true);
 
-        if (
-            empty($data['name'])
-            || empty($data['machine'])
-        ) {
-            $response->getBody()->write(json_encode(['error' => 'Required fields: name,machine']));
-            return $response;
+        $operationType = $this->entityManager->getRepository(OperationType::class)->find($id);
+        if (!$operationType) {
+            $response->getBody()->write(json_encode(['error' => 'OperationType not found']));
+            return $response->withStatus(404);
         }
 
-        $operationType = new OperationType($data['name'], $data['machine'], $data['bitrix_group_id']);
-        $this->entityManager->persist($operationType);
+        // Проверяем уникальность имени
+        if (isset($data['name'])) {
+            $existingOperationType = $this->entityManager->getRepository(OperationType::class)
+                ->createQueryBuilder('ot')
+                ->where('ot.name = :name')
+                ->andWhere('ot.id != :id')
+                ->setParameter('name', $data['name'])
+                ->setParameter('id', $id)
+                ->getQuery()
+                ->getOneOrNullResult();
+
+            if ($existingOperationType) {
+                $response->getBody()->write(json_encode([
+                    'error' => 'Тип операции с таким названием уже существует'
+                ]));
+                return $response->withStatus(422);
+            }
+        }
+
+        // Если проверка пройдена, обновляем данные
+        if (isset($data['name'])) {
+            $operationType->setName($data['name']);
+        }
+        if (isset($data['machine'])) {
+            $operationType->setMachine($data['machine']);
+        }
+        if (isset($data['bitrix_group_id'])) {
+            $operationType->setBitrixGroupId($data['bitrix_group_id']);
+        }
+
         $this->entityManager->flush();
 
         $response->getBody()->write(json_encode($operationType->toArray()));
