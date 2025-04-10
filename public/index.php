@@ -135,8 +135,9 @@ $app->group('/api/', function (RouteCollectorProxy $group) use ($container) {
     $group->patch('production-schemes/{id}', [ProductionSchemesController::class, 'update'])->setName('update-deal-production-scheme');
     $group->get('production-schemes/{id}/sync', [ProductionSchemesController::class, 'sync'])->setName('sync-scheme-and-stages-statuses');
 
-    $group->any('product-parts', [ProductPartsController::class, 'list'])->setName('products-parts-list');
-    $group->any('product-parts/{id}', [ProductPartsController::class, 'get'])->setName('product-parts-resource');
+    $group->get('product-parts', [ProductPartsController::class, 'list'])->setName('products-parts-list');
+    $group->get('product-parts/{id}', [ProductPartsController::class, 'get'])->setName('product-parts-resource');
+    $group->delete('product-parts/{id}', [ProductPartsController::class, 'delete'])->setName('delete-product-parts-resource');
     $group->any('product-parts/import/', [ProductPartsController::class, 'import'])->setName('import-product-parts-from-b24');
 
     $group->get('operation-types', [OperationTypesController::class, 'list'])->setName('operation-types-list');
