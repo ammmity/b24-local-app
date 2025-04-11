@@ -32,8 +32,8 @@ class ProductionSchemeStage
     private ProductionScheme $scheme;
 
     #[ORM\ManyToOne(targetEntity: ProductPart::class)]
-    #[ORM\JoinColumn(nullable: false)]
-    private ProductPart $productPart;
+    #[ORM\JoinColumn(nullable: true)]
+    private ?ProductPart $productPart = null;
 
     #[ORM\ManyToOne(targetEntity: OperationType::class)]
     #[ORM\JoinColumn(nullable: false)]

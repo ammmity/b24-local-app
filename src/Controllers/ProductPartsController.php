@@ -6,6 +6,8 @@ use App\Entities\ProductPart;
 use App\Entities\GoodPart;
 use App\Services\CRestService;
 use App\Settings\SettingsInterface;
+use App\Entities\ProductionSchemeStage;
+use App\Entities\ProductionScheme;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
@@ -85,6 +87,24 @@ class ProductPartsController {
         if ($isUsed) {
             $response->getBody()->write(json_encode([
                 'error' => 'Невозможно удалить деталь, так как она используется в товарах. Сначала удалите все связи с товарами.'
+            ]));
+            return $response;
+        }
+
+        // Проверяем использование в схемах производства которые реализуются на данный момент
+        $isUsedInSchemes = $this->entityManager->getRepository(ProductionSchemeStage::class)
+            ->createQueryBuilder('stage')
+            ->innerJoin('stage.productionScheme', 'scheme')
+            ->where('stage.productPart = :productPart')
+            ->andWhere('scheme.status != :status')
+            ->setParameter('productPart', $productPart)
+            ->setParameter('status', ProductionScheme::STATUS_DONE)
+            ->getQuery()
+            ->getOneOrNullResult();
+
+        if ($isUsedInSchemes) {
+            $response->getBody()->write(json_encode([
+                'error' => 'Невозможно удалить деталь, так как она используется в схемах производства. Сначала удалите все связи со схемами.'
             ]));
             return $response;
         }
