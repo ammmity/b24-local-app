@@ -287,6 +287,29 @@ class ProductionSchemesController
         return $response;
     }
 
+    public function virtualParts(Request $request, Response $response, array $args): Response
+    {
+        $dealId = $args['id'] ?? null;
+
+        if (!$dealId) {
+            $response->getBody()->write(json_encode(['error' => 'deal_id is required']));
+            return $response->withStatus(400);
+        }
+
+        $scheme = $this->entityManager->getRepository(ProductionScheme::class)
+            ->findOneBy(['dealId' => $dealId]);
+
+        if (!$scheme) {
+            $response->getBody()->write(json_encode(['error' => 'Схема производства не найдена']));
+            return $response->withStatus(404);
+        }
+
+        $virtualParts = $this->productionSchemeService->getCurrentVirtualParts($scheme);
+
+        $response->getBody()->write(json_encode($virtualParts));
+        return $response;
+    }
+
     private function validateStageData(array $data): bool
     {
         $requiredFields = ['product_part_id', 'operation_type_id', 'stage_number', 'quantity'];
