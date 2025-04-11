@@ -26,7 +26,8 @@
 
 ### frontend
 - `npm run build`
-- подставить в resources/templates/deal-detail.html.twig собранный js и css из public/dist
+- подставить в `resources/templates/deal-detail.html.twig` собранный js и css из public/dist
+- подставить в `resources/templates/app.html.twig` собранный js и css из public/dist
 
 ## Запуск
 - `php -S localhost:8080`

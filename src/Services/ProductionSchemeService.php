@@ -72,6 +72,44 @@ class ProductionSchemeService
         $this->entityManager->flush();
     }
 
+    public function getCurrentVirtualParts(ProductionScheme $scheme): array
+    {
+        $virtualParts = [];
+
+        $productionSchemeStages = $scheme->getStages();
+        /* @var ProductionSchemeStage $productionSchemeStage  */
+        foreach ($productionSchemeStages as $productionSchemeStage) {
+
+            $isCompletedOrFirstStage =
+                $productionSchemeStage->getStatus() === ProductionSchemeStage::STATUS_COMPLETED
+                || $productionSchemeStage->getStageNumber() === 1;
+
+            if ($isCompletedOrFirstStage) {
+                continue;
+            }
+
+            $productPart = $productionSchemeStage->toArray()['product_part']['id'];
+
+            $prevProductionSchemeStage = $productionSchemeStages->filter(fn($stage) => $stage->getStageNumber() === $productionSchemeStage->getStageNumber() - 1)->first();
+
+            // Предыдущая стадия завершена, значит на виртуальном складе есть виртуальная деталь
+            if ($prevProductionSchemeStage->getStatus() === ProductionSchemeStage::STATUS_COMPLETED) {
+                $prevVirtualPart = $this->entityManager->getRepository(ProductProductionStage::class)
+                ->findOneBy(['productPart' => $prevProductionSchemeStage->toArray()['product_part']['id'], 'operationType' => $prevProductionSchemeStage->toArray()['operation_type']['id']])->getResult();
+
+                // При создании детали ложим результат работы на виртуальный склад
+                $virtualPart = $this->entityManager->getRepository(ProductProductionStage::class)
+                    ->findOneBy(['productPart' => $productionSchemeStage->toArray()['product_part']['id'], 'operationType' => $productionSchemeStage->toArray()['operation_type']['id']])->getResult();
+
+                if (!empty($virtualPart)) {
+                    $virtualParts[] = array_merge($virtualPart->toArray(), ['quantity' => $prevProductionSchemeStage->getQuantity()]);
+                }
+            }
+        }
+
+        return $virtualParts;
+    }
+
     // TODO: Декомпозировать метод
     public function updateSchemeStages(string|int $taskId)
     {
