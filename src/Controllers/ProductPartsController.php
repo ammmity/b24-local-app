@@ -94,13 +94,14 @@ class ProductPartsController {
         // Проверяем использование в схемах производства которые реализуются на данный момент
         $isUsedInSchemes = $this->entityManager->getRepository(ProductionSchemeStage::class)
             ->createQueryBuilder('stage')
-            ->innerJoin('stage.productionScheme', 'scheme')
+            ->select('COUNT(stage)')
+            ->join('stage.scheme', 'ps')
             ->where('stage.productPart = :productPart')
-            ->andWhere('scheme.status != :status')
+            ->andWhere('ps.status != :status')
             ->setParameter('productPart', $productPart)
-            ->setParameter('status', ProductionScheme::STATUS_DONE)
+            ->setParameter('status', 'done')
             ->getQuery()
-            ->getOneOrNullResult();
+            ->getSingleScalarResult() > 0;
 
         if ($isUsedInSchemes) {
             $response->getBody()->write(json_encode([
