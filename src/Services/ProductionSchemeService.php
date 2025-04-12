@@ -54,7 +54,7 @@ class ProductionSchemeService
             }
 
             $operationLog = new OperationLog(
-                taskLink: "https://furama.crm-kmz.ru/company/personal/user/{$completedStage->getExecutorId()}/tasks/task/view/{$completedStage->getBitrixTaskId()}/",
+                taskLink: $this->settings->get('appUrl') . "company/personal/user/{$completedStage->getExecutorId()}/tasks/task/view/{$completedStage->getBitrixTaskId()}/",
                 bitrixTaskId: (int)$completedStage->getBitrixTaskId(),
                 dealId: (int)$scheme->getDealId(),
                 detailId: (int)$stageData['product_part']['id'],
