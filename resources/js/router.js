@@ -1,10 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router';
+import apiClient from './api';
 import AppLayout from './components/layout/AppLayout.vue';
-import Dashboard from './components/views/Dashboard.vue';
 import Settings from './components/views/Settings.vue';
-import Goods from './components/views/Goods.vue'    
-import EmployeeReport from './components/views/EmployeeReport.vue'
-import VirtualParts from './components/views/VirtualParts.vue'
 // Получаем базовый путь из env
 const basePath = import.meta.env.VITE_APP_BASE_PATH || '/production-app/public/app/';
 
@@ -63,6 +60,11 @@ const routes = [
                 name: 'employee-report',
                 component: () => import('./components/views/EmployeeReport.vue')
             },
+            {
+                path: 'restricted',
+                name: 'restricted',
+                component: () => import('./components/views/Restricted.vue')
+            },
         ]
     }
 ];
@@ -72,13 +74,35 @@ const router = createRouter({
     routes,
 });
 
+// Глобальный хук для проверки авторизации
+router.beforeEach(async (to, from, next) => {
+    // Если пользователь уже на странице restricted, пропускаем проверку
+    if (to.name === 'restricted') {
+        next();
+        return;
+    }
+
+    try {
+        // Проверяем авторизацию через API
+        const response = await apiClient.get('/users/me');
+        if (response.data && response.data.IS_TEHNOLOG) {
+            // Пользователь авторизован и является технологом
+            next();
+        } else {
+            // Пользователь не авторизован или не является технологом - показываем страницу restricted
+            next({ name: 'restricted' });
+        }
+    } catch (error) {
+        // Ошибка при проверке авторизации
+        console.error('Ошибка при проверке авторизации:', error);
+        next({ name: 'restricted' });
+    }
+});
+
 // Для программной навигации можно создать вспомогательную функцию
 export const navigateTo = (path) => {
     const fullPath = basePath + (path || '').replace(/^\//, '');
     window.location.href = fullPath;
 }
-
-// Или использовать в компонентах так:
-// this.$router.push(basePath + 'users')
 
 export default router;

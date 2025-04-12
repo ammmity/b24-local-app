@@ -72,6 +72,23 @@ class UsersController {
         return $response;
     }
 
+    public function me(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
+    {
+        $currentUser = $this->CRestService->currentUser();
+
+
+        if ($this->settings->isProduction()) {
+            $areUserTehnolog = in_array($this->settings->get('b24')['TEHNOLOG_DEPARTMENT_ID'], $currentUser['UF_DEPARTMENT']);
+        } else {
+            $areUserTehnolog = true;
+        }
+
+        $currentUser['IS_TEHNOLOG'] = $areUserTehnolog;
+
+        $response->getBody()->write(json_encode($currentUser));
+        return $response;
+    }
+
     public function getSystemUser(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
     {
         $systemUserId = $this->settings->get('b24')['SYSTEM_USER_ID'];
