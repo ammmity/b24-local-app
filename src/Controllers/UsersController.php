@@ -78,12 +78,12 @@ class UsersController {
 
 
         if ($this->settings->isProduction()) {
-            $areUserTehnolog = in_array($this->settings->get('b24')['TEHNOLOG_DEPARTMENT_ID'], $currentUser['UF_DEPARTMENT']);
+            $isUserTehnolog = in_array($this->settings->get('b24')['TEHNOLOG_DEPARTMENT_ID'], $currentUser['UF_DEPARTMENT']);
         } else {
-            $areUserTehnolog = true;
+            $isUserTehnolog = true;
         }
 
-        $currentUser['IS_TEHNOLOG'] = $areUserTehnolog;
+        $currentUser['IS_TEHNOLOG'] = $isUserTehnolog;
 
         $response->getBody()->write(json_encode($currentUser));
         return $response;

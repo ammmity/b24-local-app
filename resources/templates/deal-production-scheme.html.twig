@@ -8,20 +8,22 @@
     <title>Настройка производства</title>
     {% if isProduction %}
         <link rel="icon" type="image/svg+xml" href="/production-app/public/dist/assets/vite-DcBtz0py.svg" />
-        <script type="module" crossorigin src="/production-app/public/dist/assets/index-CXXHuhpK.js"></script>
-        <link rel="stylesheet" crossorigin href="/production-app/public/dist/assets/index-DbrzlL-a.css">
+        <script type="module" crossorigin src="/production-app/public/dist/assets/index-jSYCvUlH.js"></script>
+        <link rel="stylesheet" crossorigin href="/production-app/public/dist/assets/index-Bu5B5Zjv.css">
     {% else %}
         <link rel="icon" type="image/svg+xml" href="/dist/assets/vite-DcBtz0py.svg" />
-        <script type="module" crossorigin src="/dist/assets/index-Dork-quE.js"></script>
-        <link rel="stylesheet" crossorigin href="/dist/assets/index-Dvh3SC7A.css">
+        <script type="module" crossorigin src="/dist/assets/index-BZbSXb3F.js"></script>
+    <link rel="stylesheet" crossorigin href="/dist/assets/index-Bu5B5Zjv.css">
     {% endif %}
+
+    <script src="//api.bitrix24.com/api/v1/"></script>
 </head>
 <body>
-{% if areUserTehnolog is not empty %}
+{% if isUserTehnolog is not empty %}
     {% if dealId is empty %}
         <h1>Сделка не найдена</h1>
     {% else %}
-        <div id="productionApp" data-deal-id="{{ dealId }}"></div>
+        <div id="productionApp" data-deal-id="{{ dealId }}" data-user-auth="{{ userAuth|json_encode }}"></div>
     {% endif %}
 {% else %}
     <h1>Нет доступа</h1>

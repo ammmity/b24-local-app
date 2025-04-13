@@ -16,11 +16,7 @@ use App\Services\ProductionSchemeService;
 use App\Services\ProductStoresAndDocumentsService;
 use App\Settings\Settings;
 use App\Settings\SettingsInterface;
-use App\Middlewares\{
-    JsonResponseMiddleware,
-    CorsResponseMiddleware,
-    AuthMiddleware
-};
+use App\Middlewares\{JsonResponseMiddleware, CorsResponseMiddleware, AuthMiddleware, TehnologMiddleware};
 use App\Controllers\{
     AppController,
     InstallB24AppController,
@@ -108,6 +104,7 @@ define('C_REST_CLIENT_SECRET', $b24Settings['appKey']);
 $app = AppFactory::create();
 $twig = Twig::create(__DIR__ . '/../resources/templates', ['cache' => false]);//__DIR__ . '/../templatesCache'
 $app->add(TwigMiddleware::create($app, $twig));
+$app->add(AuthMiddleware::class); // Гарантирует что все запросы происходят из б24, либо события с auth
 $app->add(JsonResponseMiddleware::class);
 $app->add(CorsResponseMiddleware::class);
 
@@ -142,40 +139,40 @@ $app->group('/api/', function (RouteCollectorProxy $group) use ($container) {
         $group->patch('production-schemes/{id}', [ProductionSchemesController::class, 'update'])->setName('update-deal-production-scheme');
         $group->get('production-schemes/{id}/sync', [ProductionSchemesController::class, 'sync'])->setName('sync-scheme-and-stages-statuses');
         $group->get('production-schemes/{id}/virtual-parts', [ProductionSchemesController::class, 'virtualParts'])->setName('get-deal-production-scheme-virtual-parts');
-    
+
         $group->get('product-parts', [ProductPartsController::class, 'list'])->setName('products-parts-list');
         $group->get('product-parts/{id}', [ProductPartsController::class, 'get'])->setName('product-parts-resource');
         $group->delete('product-parts/{id}', [ProductPartsController::class, 'delete'])->setName('delete-product-parts-resource');
         $group->any('product-parts/import/', [ProductPartsController::class, 'import'])->setName('import-product-parts-from-b24');
-    
+
         $group->get('operation-types', [OperationTypesController::class, 'list'])->setName('operation-types-list');
         $group->get('operation-types/{id}', [OperationTypesController::class, 'get'])->setName('operation-type-resource');
         $group->post('operation-types', [OperationTypesController::class, 'create'])->setName('add-operation-type');
         $group->patch('operation-types/{id}', [OperationTypesController::class, 'update'])->setName('update-operation-type');
         $group->delete('operation-types/{id}', [OperationTypesController::class, 'remove'])->setName('delete-operation-type');
-    
+
         $group->get('product-operation-stages', [ProductProductionStagesController::class, 'list'])->setName('product-operation-stages-list');
         $group->get('product-operation-stages/{id}', [ProductProductionStagesController::class, 'get'])->setName('product-operation-stages-resource');
         $group->post('product-operation-stages', [ProductProductionStagesController::class, 'store'])->setName('add-product-operation-stages');
         $group->patch('product-operation-stages/{id}', [ProductProductionStagesController::class, 'update'])->setName('update-product-operation-stages');
         $group->delete('product-operation-stages/{id}', [ProductProductionStagesController::class, 'delete'])->setName('delete-product-operation-stages');
         $group->patch('product-operation-stages/reorder/', [ProductProductionStagesController::class, 'reorder'])->setName('reorder-product-operation-stages');
-    
+
         $group->get('b24-events/bind-event-handlers', [B24EventsController::class, 'bindEventHandlers'])->setName('b24-bind-event-handlers');
         $group->post('b24-events/task-updated', [B24EventsController::class, 'taskUpdated'])->setName('b24-task-updated');
-      
+
         $group->get('operation-prices', [OperationPricesController::class, 'list'])->setName('operation-prices-list');
         $group->get('operation-prices/{id}', [OperationPricesController::class, 'get'])->setName('operation-price-resource');
         $group->post('operation-prices', [OperationPricesController::class, 'create'])->setName('add-operation-price');
         $group->patch('operation-prices/{id}', [OperationPricesController::class, 'update'])->setName('update-operation-price');
         $group->delete('operation-prices/{id}', [OperationPricesController::class, 'delete'])->setName('delete-operation-price');
-    
+
         $group->get('operation-logs', [OperationLogsController::class, 'list'])->setName('operation-logs-list');
         $group->get('operation-logs/users', [OperationLogsController::class, 'getUsers'])->setName('operation-logs-users');
         $group->get('operation-logs/{id}', [OperationLogsController::class, 'get'])->setName('operation-log-resource');
         $group->post('operation-logs', [OperationLogsController::class, 'create'])->setName('add-operation-log');
         $group->get('operation-logs/deal/{dealId}', [OperationLogsController::class, 'getByDealId'])->setName('get-operation-logs-by-deal');
-    
+
         // Маршруты для товаров
         $group->get('goods', [GoodsController::class, 'list']);
         $group->get('goods/{id}', [GoodsController::class, 'get']);
@@ -183,20 +180,20 @@ $app->group('/api/', function (RouteCollectorProxy $group) use ($container) {
         $group->put('goods/{id}', [GoodsController::class, 'update']);
         $group->delete('goods/{id}', [GoodsController::class, 'delete']);
         $group->any('goods/import/', [GoodsController::class, 'import']);
-    
+
         $group->get('virtual-parts', [VirtualPartsController::class, 'list']);
         $group->get('virtual-parts/{id}', [VirtualPartsController::class, 'get']);
         $group->post('virtual-parts', [VirtualPartsController::class, 'create']);
         $group->put('virtual-parts/{id}', [VirtualPartsController::class, 'update']);
         $group->delete('virtual-parts/{id}', [VirtualPartsController::class, 'delete']);
         $group->any('virtual-parts/import/', [VirtualPartsController::class, 'import']);
-    
+
         // Отчеты
         $group->get('reports/employee-operations', [ReportsController::class, 'employeeOperations'])->setName('employee-operations-report');
         $group->get('reports/operation-users', [ReportsController::class, 'getOperationUsers'])->setName('operation-users-report');
-    
-    })->add(AuthMiddleware::class);
- 
+
+    })->add(TehnologMiddleware::class);
+
     // for testing purposes
     // $group->get('update-scheme-stages-manually/{taskId}', [ProductionSchemesController::class, 'updateSchemeStagesManually'])->setName('update-scheme-stages-manually');
 });

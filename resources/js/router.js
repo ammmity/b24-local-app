@@ -4,6 +4,7 @@ import AppLayout from './components/layout/AppLayout.vue';
 import Settings from './components/views/Settings.vue';
 // Получаем базовый путь из env
 const basePath = import.meta.env.VITE_APP_BASE_PATH || '/production-app/public/app/';
+const isProd = import.meta.env.PROD;
 
 const routes = [
     {
@@ -81,21 +82,25 @@ router.beforeEach(async (to, from, next) => {
         next();
         return;
     }
-
-    try {
-        // Проверяем авторизацию через API
-        const response = await apiClient.get('/users/me');
-        if (response.data && response.data.IS_TEHNOLOG) {
-            // Пользователь авторизован и является технологом
-            next();
-        } else {
-            // Пользователь не авторизован или не является технологом - показываем страницу restricted
+    
+    if (isProd) {
+        try {
+            // Проверяем авторизацию через API
+            const response = await apiClient.get('/users/me');
+            if (response.data && response.data.IS_TEHNOLOG) {
+                // Пользователь авторизован и является технологом
+                next();
+            } else {
+                // Пользователь не авторизован или не является технологом - показываем страницу restricted
+                next({ name: 'restricted' });
+            }
+        } catch (error) {
+            // Ошибка при проверке авторизации
+            console.error('Ошибка при проверке авторизации:', error);
             next({ name: 'restricted' });
         }
-    } catch (error) {
-        // Ошибка при проверке авторизации
-        console.error('Ошибка при проверке авторизации:', error);
-        next({ name: 'restricted' });
+    } else {
+        next();
     }
 });
 
