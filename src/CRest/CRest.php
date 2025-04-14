@@ -337,7 +337,7 @@ class CRest
      * @return mixed setting application for query
      */
 
-    private static function getAppSettings()
+    public static function getAppSettings()
     {
         if (defined("C_REST_WEB_HOOK_URL") && !empty(C_REST_WEB_HOOK_URL)) {
             $arData = [
