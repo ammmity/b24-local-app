@@ -4,13 +4,17 @@ import App from './App.vue'
 import router from './router';
 import ElementPlus from 'element-plus'; // Импорт Element Plus
 import 'element-plus/dist/index.css'; // Импорт стилей
+import { user } from './user';
 
 // Создание приложения
 const app = createApp(App);
 
-// Получение переменной из атрибута && Передача переменной в корневой компонент через provide
 const appElement = document.getElementById('productionApp');
-const dealId = appElement.getAttribute('data-deal-id');
+
+const userAuth = JSON.parse(appElement.getAttribute('data-user-auth'));
+user.auth = userAuth;
+
+const dealId = appElement.getAttribute('data-deal-id'); // id сделки
 app.provide('dealId', dealId);
 
 app.use(router);

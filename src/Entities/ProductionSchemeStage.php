@@ -9,10 +9,10 @@ use Doctrine\ORM\Mapping as ORM;
 class ProductionSchemeStage
 {
     public const STATUS_B24_TASK_NOT_LINKED = 0; // не создана задача в б24
-    public const STATUS_WAITING = 1;
-    public const STATUS_COMPLETED = 3;
-    public const STATUS_IN_PROGRESS = 27;
-    public const STATUS_NO_MATERIALS = 29;
+    public const STATUS_WAITING = 'В ожидании';
+    public const STATUS_COMPLETED = 'Завершены';
+    public const STATUS_IN_PROGRESS = 'В работе';
+    public const STATUS_NO_MATERIALS = 'Нет сырья';
 
     public const STATUS_LABELS = [
         self::STATUS_B24_TASK_NOT_LINKED => '',
@@ -32,8 +32,8 @@ class ProductionSchemeStage
     private ProductionScheme $scheme;
 
     #[ORM\ManyToOne(targetEntity: ProductPart::class)]
-    #[ORM\JoinColumn(nullable: false)]
-    private ProductPart $productPart;
+    #[ORM\JoinColumn(nullable: true)]
+    private ?ProductPart $productPart = null;
 
     #[ORM\ManyToOne(targetEntity: OperationType::class)]
     #[ORM\JoinColumn(nullable: false)]
@@ -114,6 +114,11 @@ class ProductionSchemeStage
     {
         $this->scheme = $scheme;
         return $this;
+    }
+
+    public function getOperationType(): OperationType
+    {
+        return $this->operationType;
     }
 
     public function getExecutorId(): ?int

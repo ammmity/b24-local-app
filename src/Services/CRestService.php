@@ -2,12 +2,24 @@
 namespace App\Services;
 
 use App\CRest\CRest;
+use App\CRest\CRestCurrentUser;
+
 class CRestService
 {
 
     public function callMethod($method, $params = [])
     {
         return CRest::call($method, $params);
+    }
+
+    public function callMethodAsCurrentUser($method, $params = [])
+    {
+        return CRestCurrentUser::call($method, $params);
+    }
+
+    public function currentUser()
+    {
+        return $this->callMethodAsCurrentUser('user.current', [])['result'];
     }
 
     public function installApp($request)
@@ -17,8 +29,17 @@ class CRestService
 
     public function addTask($params)
     {
-        return $this->callMethod('tasks.task.add', $params)['result']['task'];
+        $result = $this->callMethod('tasks.task.add', $params);
+//        $logData = print_r(['rs' => $result, 'params' => $params], 1);
+//        $logDir = dirname(__DIR__, 2) . '/logs';
+//        if (!is_dir($logDir)) {
+//            mkdir($logDir, 0755, true);
+//        }
+//        file_put_contents($logDir . '/'.__METHOD__.'.log', $logData, FILE_APPEND);
+
+        return $result['result']['task'];
     }
+
 
     public function getTask(int $taskId, array $select = ['ID','TITLE'])
     {
@@ -33,11 +54,6 @@ class CRestService
         return $this->callMethod('tasks.task.update', $params);
     }
 
-    public function currentUser()
-    {
-        return $this->callMethod('user.current', [])['result'];
-    }
-
     public function groups($params)
     {
         return $this->callMethod('socialnetwork.api.workgroup.list', $params)['result']['workgroups'];
@@ -45,7 +61,12 @@ class CRestService
 
     public function addGroupStage($params)
     {
-        return $this->callMethod('task.stages.add', $params)['result'];
+        return $this->callMethodAsCurrentUser('task.stages.add', $params)['result'];
+    }
+
+    public function removeGroupStage($params)
+    {
+        return $this->callMethodAsCurrentUser('task.stages.delete', $params)['result'];
     }
 
     public function eventBind(string $event,  string $handler)
@@ -73,7 +94,7 @@ class CRestService
      */
     public function kanbanStages($groupId)
     {
-        return $this->callMethod('task.stages.get', [
+        return $this->callMethodAsCurrentUser('task.stages.get', [
             'entityId' => $groupId
         ])['result'];
     }

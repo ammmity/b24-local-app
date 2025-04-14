@@ -174,7 +174,9 @@ class ProductionSchemesController
                     ];
 
                     if ((int) $stage->getExecutorId() === (int) $this->settings->get('b24')['SYSTEM_USER_ID']) {
-                        $b24TaskFields['ACCOMPLICES'] = array_map(fn($user) => $user['USER_ID'], $this->CRestService->getGroupUsers($groupId));
+                        $groupUsers = $this->CRestService->getGroupUsers($groupId);
+                        $groupUsersExceptCreator = array_filter($groupUsers, fn($user) => $user['ROLE'] !== 'A');
+                        $b24TaskFields['ACCOMPLICES'] = array_map(fn($user) => $user['USER_ID'], $groupUsersExceptCreator);
                     }
 
                     $b24Task = $this->CRestService->addTask([
@@ -284,6 +286,29 @@ class ProductionSchemesController
         $this->productionSchemeService->updateSchemeStages($taskId);
 
         $response->getBody()->write(json_encode(['success' => true]));
+        return $response;
+    }
+
+    public function virtualParts(Request $request, Response $response, array $args): Response
+    {
+        $dealId = $args['id'] ?? null;
+
+        if (!$dealId) {
+            $response->getBody()->write(json_encode(['error' => 'deal_id is required']));
+            return $response->withStatus(400);
+        }
+
+        $scheme = $this->entityManager->getRepository(ProductionScheme::class)
+            ->findOneBy(['dealId' => $dealId]);
+
+        if (!$scheme) {
+            $response->getBody()->write(json_encode(['error' => 'Схема производства не найдена']));
+            return $response->withStatus(404);
+        }
+
+        $virtualParts = $this->productionSchemeService->getCurrentVirtualParts($scheme);
+
+        $response->getBody()->write(json_encode($virtualParts));
         return $response;
     }
 

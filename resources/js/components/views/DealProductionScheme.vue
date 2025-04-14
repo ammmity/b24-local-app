@@ -16,16 +16,45 @@
         </el-descriptions-item>
       </el-descriptions>
 
+      <div class="virtual-parts-section" v-if="productionScheme?.status !== 'prepare'">
+        <div class="virtual-parts-header" @click="toggleVirtualParts">
+          <h4>Текущие детали виртуального склада</h4>
+          <el-icon :class="{ 'is-reverse': showVirtualParts }">
+            <ArrowDown />
+          </el-icon>
+        </div>
+
+        <el-collapse-transition>
+          <div v-if="showVirtualParts">
+            <div v-if="virtualParts.length > 0" class="virtual-parts-table-wrapper">
+              <el-table
+                v-loading="isLoadingVirtualParts"
+                :data="virtualParts"
+                style="width: 100%"
+                size="small"
+                border
+              >
+                <el-table-column prop="name" label="Наименование" />
+                <el-table-column prop="quantity" label="Количество на виртуальном складе" width="240" />
+              </el-table>
+            </div>
+            <div v-else>
+              <el-empty description="Виртуальный склад пуст" />
+            </div>
+          </div>
+        </el-collapse-transition>
+      </div>
+
       <div class="actions-panel">
 
         <el-button
           type="warning"
           :loading="isLoadingStatuses"
-          @click="loadOperationStatuses"
+          @click="loadProductionScheme"
           :disabled="productionScheme?.status === 'done' || productionScheme?.status !== 'progress'"
           plain
         >
-          Получить актуальные статусы операций
+          Обновить
         </el-button>
 
         <el-button
@@ -156,9 +185,13 @@
 import {defineComponent, inject, watch, onMounted, ref, computed} from 'vue';
 import apiClient from '../../api';
 import { ElMessage } from 'element-plus';
+import { ArrowDown } from '@element-plus/icons-vue'
 
 export default defineComponent({
   name: 'DealProductionScheme',
+  components: {
+    ArrowDown,
+  },
   setup() {
     const dealId = inject('dealId');
     const deal = ref(null);
@@ -347,15 +380,15 @@ export default defineComponent({
         deal.value.dealProducts.forEach(product => {
           if (product.parts && product.parts.length > 0) {
             const productName = product.product.name || product.product.title || product.product.id || 'Неизвестный продукт';
-            
+
             product.parts.forEach(part => {
               const partName = part.name || part.title || part.id || 'Неизвестная деталь';
-              
+
               // Проверка количества
               if (part.quantity === 0) {
                 errors.value.push(`Для детали "${partName}" продукта "${productName}" не установлено количество`);
               }
-              
+
               // Проверка наличия этапов производства
               if (!part.production_stages || part.production_stages.length === 0) {
                 errors.value.push(`У детали "${partName}" продукта "${productName}" отсутствуют этапы производства`);
@@ -467,7 +500,7 @@ export default defineComponent({
     const startProduction = async () => {
       try {
         isStarting.value = true;
-        
+
         // Автоматически назначаем системного пользователя для всех стадий
         tableData.value.forEach(row => {
           if (!row.executor) {
@@ -500,6 +533,13 @@ export default defineComponent({
       }
     };
 
+    const loadProductionScheme = async () => {
+        await Promise.all([
+            loadOperationStatuses(),
+            loadVirtualParts()
+        ]);
+    };
+
     const loadOperationStatuses = async () => {
       try {
         isLoadingStatuses.value = true;
@@ -508,7 +548,7 @@ export default defineComponent({
 
         ElMessage({
           type: 'success',
-          message: 'Статусы операций обновлены'
+          message: 'Статусы операций загружены'
         });
       } catch (error) {
         console.error('Error loading operation statuses:', error);
@@ -527,19 +567,35 @@ export default defineComponent({
       }
     };
 
-    // Следим за изменением dealId
-    // watch(() => dealId, async (newDealId) => {
-    //   if (newDealId) {
-    //     // Убедимся что пользователи загружены
-    //     if (!executors.value.length) {
-    //       await fetchUsers();
-    //     }
-    //     await Promise.all([
-    //       fetchDealData(newDealId),
-    //       fetchProductionScheme(newDealId)
-    //     ]);
-    //   }
-    // }, { immediate: true });
+    const showVirtualParts = ref(false)
+    const virtualParts = ref([])
+    const isLoadingVirtualParts = ref(false)
+
+    const toggleVirtualParts = async () => {
+      showVirtualParts.value = !showVirtualParts.value
+      if (showVirtualParts.value && !virtualParts.value.length) {
+        await loadVirtualParts()
+      }
+    }
+
+    const loadVirtualParts = async () => {
+      if (!dealId) return
+
+      try {
+        isLoadingVirtualParts.value = true
+        const response = await apiClient.get(`/production-schemes/${dealId}/virtual-parts`)
+        virtualParts.value = response.data
+        ElMessage({
+          type: 'success',
+          message: 'Текущие Детали виртуального склада загружены'
+        });
+      } catch (error) {
+        console.error('Error loading virtual parts:', error)
+        ElMessage.error('Ошибка при загрузке виртуальных деталей')
+      } finally {
+        isLoadingVirtualParts.value = false
+      }
+    }
 
     // Следим за изменениями в deal
     watch(() => deal.value, () => {
@@ -583,8 +639,13 @@ export default defineComponent({
       startProduction,
       isLoadingStatuses,
       loadOperationStatuses,
+      loadProductionScheme,
       handleTransferChange,
       getStatusClass,
+      showVirtualParts,
+      virtualParts,
+      isLoadingVirtualParts,
+      toggleVirtualParts,
     };
   },
 });
@@ -719,5 +780,44 @@ export default defineComponent({
 
 .status-default {
   color: #909399;
+}
+
+.virtual-parts-section {
+  margin: 20px 0;
+  border-bottom: 1px solid var(--el-border-color);
+  border-radius: 4px;
+}
+
+.virtual-parts-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--el-border-color);
+  background-color: var(--el-fill-color-light);
+}
+
+.virtual-parts-header h4 {
+  margin: 0;
+  font-size: 12px;
+  color: var(--el-text-color-regular);
+}
+
+.virtual-parts-table-wrapper {
+  padding: 0;
+}
+
+:deep(.el-table--border) {
+  border: none;
+}
+
+.is-reverse {
+  transform: rotate(180deg);
+}
+
+:deep(.el-icon) {
+  transition: transform 0.3s;
+  color: var(--el-text-color-secondary);
 }
 </style>

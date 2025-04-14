@@ -54,7 +54,7 @@ class ProductionSchemeService
             }
 
             $operationLog = new OperationLog(
-                taskLink: "https://furama.crm-kmz.ru/company/personal/user/{$completedStage->getExecutorId()}/tasks/task/view/{$completedStage->getBitrixTaskId()}/",
+                taskLink: $this->settings->get('appUrl') . "company/personal/user/{$completedStage->getExecutorId()}/tasks/task/view/{$completedStage->getBitrixTaskId()}/",
                 bitrixTaskId: (int)$completedStage->getBitrixTaskId(),
                 dealId: (int)$scheme->getDealId(),
                 detailId: (int)$stageData['product_part']['id'],
@@ -70,6 +70,48 @@ class ProductionSchemeService
         }
 
         $this->entityManager->flush();
+    }
+
+    public function getCurrentVirtualParts(ProductionScheme $scheme): array
+    {
+        $virtualParts = [];
+
+        $productionSchemeStages = $scheme->getStages();
+        /* @var ProductionSchemeStage $productionSchemeStage  */
+        foreach ($productionSchemeStages as $productionSchemeStage) {
+            $isCompletedOrFirstStage =
+                $productionSchemeStage->getStatus() === ProductionSchemeStage::STATUS_COMPLETED
+                || $productionSchemeStage->getStageNumber() === 1;
+
+            if ($isCompletedOrFirstStage) {
+                continue;
+            }
+
+            $productPart = $productionSchemeStage->toArray()['product_part']['id'];
+
+            $prevProductionSchemeStage = $this->entityManager->getRepository(ProductionSchemeStage::class)
+                ->findOneBy([
+                    'scheme' => $productionSchemeStage->getScheme(),
+                    'stageNumber' => $productionSchemeStage->getStageNumber() - 1,
+                    'productPart' => $productPart
+                ]);
+
+            if (!$prevProductionSchemeStage) {
+                // Обработка ситуации, когда предыдущая стадия не найдена
+                continue;
+            }
+
+            // Предыдущая стадия завершена, значит на виртуальном складе есть виртуальная деталь
+            if ($prevProductionSchemeStage->getStatus() === ProductionSchemeStage::STATUS_COMPLETED) {
+                $prevVirtualPart = $this->entityManager->getRepository(ProductProductionStage::class)
+                ->findOneBy(['productPart' => $prevProductionSchemeStage->toArray()['product_part']['id'], 'operationType' => $prevProductionSchemeStage->toArray()['operation_type']['id']])->getResult();
+                if (!empty($prevVirtualPart)) {
+                    $virtualParts[] = array_merge($prevVirtualPart->toArray(), ['quantity' => $prevProductionSchemeStage->getQuantity()]);
+                }
+            }
+        }
+
+        return $virtualParts;
     }
 
     // TODO: Декомпозировать метод
@@ -172,8 +214,14 @@ class ProductionSchemeService
                         ],
                     ];
 
+//                    if ((int) $nextStage->getExecutorId() === (int) $this->settings->get('b24')['SYSTEM_USER_ID']) {
+//                        $b24TaskFields['ACCOMPLICES'] = array_map(fn($user) => $user['USER_ID'], $this->CRestService->getGroupUsers($nextStageGroupId));
+//                    }
+
                     if ((int) $nextStage->getExecutorId() === (int) $this->settings->get('b24')['SYSTEM_USER_ID']) {
-                        $b24TaskFields['ACCOMPLICES'] = array_map(fn($user) => $user['USER_ID'], $this->CRestService->getGroupUsers($nextStageGroupId));
+                        $groupUsers = $this->CRestService->getGroupUsers($nextStageGroupId);
+                        $groupUsersExceptCreator = array_filter($groupUsers, fn($user) => $user['ROLE'] !== 'A');
+                        $b24TaskFields['ACCOMPLICES'] = array_map(fn($user) => $user['USER_ID'], $groupUsersExceptCreator);
                     }
 
 

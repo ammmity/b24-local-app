@@ -25,16 +25,18 @@ class GoodsController
         $queryParams = $request->getQueryParams();
         $goodsRepository = $this->entityManager->getRepository(Good::class);
 
+        $queryBuilder = $goodsRepository->createQueryBuilder('g')
+            ->innerJoin('g.parts', 'p')
+            ->having('COUNT(p.id) > 0')
+            ->groupBy('g.id');
+
         if (!empty($queryParams['name'])) {
-            $queryBuilder = $goodsRepository->createQueryBuilder('g');
             $queryBuilder
-                ->where('g.name LIKE :name')
+                ->andWhere('g.name LIKE :name')
                 ->setParameter('name', '%' . $queryParams['name'] . '%');
-            $goods = $queryBuilder->getQuery()->getResult();
-        } else {
-            $goods = $goodsRepository->findAll();
         }
 
+        $goods = $queryBuilder->getQuery()->getResult();
         $data = array_map(fn(Good $good) => $good->toArray(), $goods);
 
         $response->getBody()->write(json_encode($data));

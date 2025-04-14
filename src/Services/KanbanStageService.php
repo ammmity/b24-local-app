@@ -42,6 +42,30 @@ class KanbanStageService
         return $stages;
     }
 
+    public function removeDefaultStages($groupId): void
+    {
+        $stages = [];
+        $kanbanStages = $this->CRestService->kanbanStages($groupId);
+
+        if (empty($kanbanStages) || !is_array($kanbanStages)) {
+            return;
+        }
+
+        $stageTemplates = $this->getStageTemplates($groupId);
+
+        foreach ($kanbanStages as $stage) {
+            $isTemplateStage = array_filter($stageTemplates, function($item) use ($stage) {
+                return $item['TITLE'] === $stage['TITLE'];
+            });
+
+            if (!$isTemplateStage) {
+                $this->CRestService->removeGroupStage(['id' => $stage['ID']]);
+            }
+        }
+    }
+
+
+
     /**
      * Находит или создает стадию канбана
      *

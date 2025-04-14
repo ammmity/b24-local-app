@@ -26,11 +26,14 @@
 
 ### frontend
 - `npm run build`
-- подставить в resources/templates/deal-detail.html.twig собранный js и css из public/dist
+- подставить в `resources/templates/deal-detail.html.twig` собранный js и css из public/dist
+- подставить в `resources/templates/app.html.twig` собранный js и css из public/dist
 
 ## Запуск
 - `php -S localhost:8080`
 - `npm run dev`
+
+#### При разработке в локальной среде отключаем auth и tehnolog мидлвары в public/index.php)
 
 ## Установка в Битрикс24
 

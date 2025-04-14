@@ -8,17 +8,19 @@
     <title>Производство</title>
     {% if isProduction %}
         <link rel="icon" type="image/svg+xml" href="/production-app/public/dist/assets/vite-DcBtz0py.svg" />
-        <script type="module" crossorigin src="/production-app/public/dist/assets/index-DzKYRc5c.js"></script>
-        <link rel="stylesheet" crossorigin href="/production-app/public/dist/assets/index-DbrzlL-a.css">
+        <script type="module" crossorigin src="/production-app/public/dist/assets/index-jSYCvUlH.js"></script>
+        <link rel="stylesheet" crossorigin href="/production-app/public/dist/assets/index-Bu5B5Zjv.css">
     {% else %}
         <link rel="icon" type="image/svg+xml" href="/dist/assets/vite-DcBtz0py.svg" />
-        <script type="module" crossorigin src="/dist/assets/index-Dork-quE.js"></script>
-        <link rel="stylesheet" crossorigin href="/dist/assets/index-Dvh3SC7A.css">
+        <script type="module" crossorigin src="/dist/assets/index-BZbSXb3F.js"></script>
+        <link rel="stylesheet" crossorigin href="/dist/assets/index-Bu5B5Zjv.css">
     {% endif %}
+
+    <script src="//api.bitrix24.com/api/v1/"></script>
 </head>
 <body>
-{% if areUserTehnolog is not empty %}
-    <div id="productionApp"></div>
+{% if isUserTehnolog is not empty %}
+    <div id="productionApp" data-user-auth="{{ userAuth|escape|json_encode }}"></div>
 {% else %}
     <h1>Нет доступа</h1>
 {% endif %}

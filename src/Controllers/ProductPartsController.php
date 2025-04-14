@@ -6,6 +6,8 @@ use App\Entities\ProductPart;
 use App\Entities\GoodPart;
 use App\Services\CRestService;
 use App\Settings\SettingsInterface;
+use App\Entities\ProductionSchemeStage;
+use App\Entities\ProductionScheme;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
@@ -75,7 +77,7 @@ class ProductPartsController {
 
         if (!$productPart) {
             $response->getBody()->write(json_encode(['error' => 'Деталь не найдена']));
-            return $response;
+            return $response->withStatus(404);
         }
 
         // Проверяем, используется ли деталь в других таблицах
@@ -86,10 +88,47 @@ class ProductPartsController {
             $response->getBody()->write(json_encode([
                 'error' => 'Невозможно удалить деталь, так как она используется в товарах. Сначала удалите все связи с товарами.'
             ]));
-            return $response;
+            return $response->withStatus(400);
+        }
+
+        // Проверяем использование в активных схемах производства
+        $isUsedInSchemes = $this->entityManager->getRepository(ProductionSchemeStage::class)
+            ->createQueryBuilder('stage')
+            ->select('COUNT(stage)')
+            ->join('stage.scheme', 'ps')
+            ->where('stage.productPart = :productPart')
+            ->andWhere('ps.status != :status')
+            ->setParameter('productPart', $productPart)
+            ->setParameter('status', 'done')
+            ->getQuery()
+            ->getSingleScalarResult() > 0;
+
+        if ($isUsedInSchemes) {
+            $response->getBody()->write(json_encode([
+                'error' => 'Невозможно удалить деталь, так как она используется в активных схемах производства.'
+            ]));
+            return $response->withStatus(400);
         }
 
         try {
+            // Обновляем ссылки на деталь в завершенных схемах
+            $this->entityManager->createQueryBuilder()
+                ->update(ProductionSchemeStage::class, 'stage')
+                ->set('stage.productPart', ':null')
+                ->where('stage.productPart = :productPart')
+                ->andWhere('EXISTS (
+                    SELECT 1 
+                    FROM App\Entities\ProductionScheme ps 
+                    WHERE ps = stage.scheme 
+                    AND ps.status = :status
+                )')
+                ->setParameter('null', null)
+                ->setParameter('productPart', $productPart)
+                ->setParameter('status', 'done')
+                ->getQuery()
+                ->execute();
+
+            // Удаляем деталь
             $this->entityManager->remove($productPart);
             $this->entityManager->flush();
 
@@ -101,9 +140,9 @@ class ProductPartsController {
 
         } catch (\Exception $e) {
             $response->getBody()->write(json_encode([
-                'error' => 'Ошибка при удалении детали'
+                'error' => 'Ошибка при удалении детали.' 
             ]));
-            return $response;
+            return $response->withStatus(400);
         }
     }
 
