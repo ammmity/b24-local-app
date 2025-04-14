@@ -3,6 +3,7 @@ namespace App\Controllers;
 
 use App\Entities\ProductPart;
 use App\Services\CRestService;
+use App\CRest\CRestCurrentUser;
 use App\Settings\Settings;
 use App\Settings\SettingsInterface;
 use Doctrine\ORM\EntityManager;
@@ -33,19 +34,28 @@ class AppController {
      */
     public function dashboard(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
     {
+        $queryParams = $request->getQueryParams();
+        $requestParams = $request->getParsedBody();
+        $userAuth = [
+            'DOMAIN' => $queryParams['DOMAIN'] ?? false,
+            'APP_SID' => $queryParams['APP_SID'] ?? false,
+            'AUTH_ID' => $queryParams['AUTH_ID'] ?? $requestParams['AUTH_ID'] ?? false,
+            'REFRESH_ID' => $queryParams['REFRESH_ID'] ?? $requestParams['REFRESH_ID'] ?? false,
+        ];
+        CRestCurrentUser::setDataExt($userAuth); // для работы с API в контексте текущего пользователя
         $currentUser = $this->CRestService->currentUser();
 
-
         if ($this->settings->isProduction()) {
-            $areUserTehnolog = in_array($this->settings->get('b24')['TEHNOLOG_DEPARTMENT_ID'], $currentUser['UF_DEPARTMENT']);
+            $isUserTehnolog = in_array($this->settings->get('b24')['TEHNOLOG_DEPARTMENT_ID'], $currentUser['UF_DEPARTMENT']);
         } else {
-            $areUserTehnolog = true;
+            $isUserTehnolog = true;
         }
 
         $view = Twig::fromRequest($request);
         return $view->render($response, 'app.html.twig', [
-            'areUserTehnolog' => $areUserTehnolog,
-            'isProduction' => $this->settings->isProduction()
+            'isUserTehnolog' => $isUserTehnolog,
+            'isProduction' => $this->settings->isProduction(),
+            'userAuth' => $userAuth,
         ]);
     }
 
@@ -66,23 +76,29 @@ class AppController {
             $dealId = $queryParams['id'];
         }
 
+        $userAuth = [
+            'DOMAIN' => $queryParams['DOMAIN'] ?? false,
+            'APP_SID' => $queryParams['APP_SID'] ?? false,
+            'AUTH_ID' => $requestParams['AUTH_ID'] ?? false,
+            'REFRESH_ID' => $requestParams['REFRESH_ID'] ?? false,
+        ];
+
+        CRestCurrentUser::setDataExt($userAuth); // для работы с API в контексте текущего пользователя
         $currentUser = $this->CRestService->currentUser();
+
         if ($this->settings->isProduction()) {
-            $areUserTehnolog = in_array($this->settings->get('b24')['TEHNOLOG_DEPARTMENT_ID'], $currentUser['UF_DEPARTMENT']);
+            $isUserTehnolog = in_array($this->settings->get('b24')['TEHNOLOG_DEPARTMENT_ID'], $currentUser['UF_DEPARTMENT']);
         } else {
-            $areUserTehnolog = true;
+            $isUserTehnolog = true;
             $dealId = 9;
         }
-//        $result = $this->CRestService->callMethod('crm.deal.fields',[]);
-//        $products = $this->CRestService->callMethod('crm.deal.productrows.get', ['id' => $dealId]);
-//        $response->getBody()->write('<pre>'. print_r($products, true). '</pre>');
-//        return $response;
 
         $view = Twig::fromRequest($request);
         return $view->render($response, 'deal-production-scheme.html.twig', [
-            'areUserTehnolog' => $areUserTehnolog,
+            'isUserTehnolog' => $isUserTehnolog,
             'dealId' => $dealId,
-            'isProduction' => $this->settings->isProduction()
+            'isProduction' => $this->settings->isProduction(),
+            'userAuth' => $userAuth
         ]);
     }
 }

@@ -2,12 +2,24 @@
 namespace App\Services;
 
 use App\CRest\CRest;
+use App\CRest\CRestCurrentUser;
+
 class CRestService
 {
 
     public function callMethod($method, $params = [])
     {
         return CRest::call($method, $params);
+    }
+
+    public function callMethodAsCurrentUser($method, $params = [])
+    {
+        return CRestCurrentUser::call($method, $params);
+    }
+
+    public function currentUser()
+    {
+        return $this->callMethodAsCurrentUser('user.current', [])['result'];
     }
 
     public function installApp($request)
@@ -31,11 +43,6 @@ class CRestService
     public function updateTask($params)
     {
         return $this->callMethod('tasks.task.update', $params);
-    }
-
-    public function currentUser()
-    {
-        return $this->callMethod('user.current', [])['result'];
     }
 
     public function groups($params)

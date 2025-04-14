@@ -4,6 +4,7 @@ namespace App\Controllers;
 
 use App\Services\CRestService;
 use App\Services\ProductionSchemeService;
+use App\Settings\SettingsInterface;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 
@@ -11,14 +12,16 @@ class B24EventsController
 {
     public function __construct(
         private CRestService $CRestService,
-        private ProductionSchemeService $productionSchemeService
+        private ProductionSchemeService $productionSchemeService,
+        private SettingsInterface $settings
     ) {}
 
     public function bindEventHandlers(Request $request, Response $response): Response
     {
+        $appUrl = $this->settings->get('appUrl');
         $result = $this->CRestService->eventBind(
             'onTaskUpdate',
-            'https://furama.crm-kmz.ru/production-app/public/api/b24-events/task-updated'
+            $appUrl . 'production-app/public/api/b24-events/task-updated'
         );
 
         $response->getBody()->write(json_encode($result));
