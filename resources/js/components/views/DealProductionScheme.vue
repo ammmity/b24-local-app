@@ -54,7 +54,7 @@
           :disabled="productionScheme?.status === 'done' || productionScheme?.status !== 'progress'"
           plain
         >
-          Обновить
+          Подгрузить актуальные статусы и детали вирт. склада
         </el-button>
 
         <el-button
