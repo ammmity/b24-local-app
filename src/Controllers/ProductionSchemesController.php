@@ -174,7 +174,9 @@ class ProductionSchemesController
                     ];
 
                     if ((int) $stage->getExecutorId() === (int) $this->settings->get('b24')['SYSTEM_USER_ID']) {
-                        $b24TaskFields['ACCOMPLICES'] = array_map(fn($user) => $user['USER_ID'], $this->CRestService->getGroupUsers($groupId));
+                        $groupUsers = $this->CRestService->getGroupUsers($groupId);
+                        $groupUsersExceptCreator = array_filter($groupUsers, fn($user) => $user['ROLE'] !== 'A');
+                        $b24TaskFields['ACCOMPLICES'] = array_map(fn($user) => $user['USER_ID'], $groupUsersExceptCreator);
                     }
 
                     $b24Task = $this->CRestService->addTask([

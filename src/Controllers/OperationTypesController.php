@@ -97,6 +97,7 @@ class OperationTypesController {
 
         // Создание стадий для канбана группы
         $stages = $this->kanbanStageService->getOrCreateStages($data['bitrix_group_id']);
+        $this->kanbanStageService->removeDefaultStages($data['bitrix_group_id']);
         // Сохраним связь в бд
         foreach ($stages as $stage) {
             $bitrixGroupKanbanRepository = $this->entityManager->getRepository(BitrixGroupKanbanStage::class);

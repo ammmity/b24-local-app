@@ -79,7 +79,6 @@ class ProductionSchemeService
         $productionSchemeStages = $scheme->getStages();
         /* @var ProductionSchemeStage $productionSchemeStage  */
         foreach ($productionSchemeStages as $productionSchemeStage) {
-
             $isCompletedOrFirstStage =
                 $productionSchemeStage->getStatus() === ProductionSchemeStage::STATUS_COMPLETED
                 || $productionSchemeStage->getStageNumber() === 1;
@@ -90,19 +89,24 @@ class ProductionSchemeService
 
             $productPart = $productionSchemeStage->toArray()['product_part']['id'];
 
-            $prevProductionSchemeStage = $productionSchemeStages->filter(fn($stage) => $stage->getStageNumber() === $productionSchemeStage->getStageNumber() - 1)->first();
+            $prevProductionSchemeStage = $this->entityManager->getRepository(ProductionSchemeStage::class)
+                ->findOneBy([
+                    'scheme' => $productionSchemeStage->getScheme(),
+                    'stageNumber' => $productionSchemeStage->getStageNumber() - 1,
+                    'productPart' => $productPart
+                ]);
+
+            if (!$prevProductionSchemeStage) {
+                // Обработка ситуации, когда предыдущая стадия не найдена
+                continue;
+            }
 
             // Предыдущая стадия завершена, значит на виртуальном складе есть виртуальная деталь
             if ($prevProductionSchemeStage->getStatus() === ProductionSchemeStage::STATUS_COMPLETED) {
                 $prevVirtualPart = $this->entityManager->getRepository(ProductProductionStage::class)
                 ->findOneBy(['productPart' => $prevProductionSchemeStage->toArray()['product_part']['id'], 'operationType' => $prevProductionSchemeStage->toArray()['operation_type']['id']])->getResult();
-
-                // При создании детали ложим результат работы на виртуальный склад
-                $virtualPart = $this->entityManager->getRepository(ProductProductionStage::class)
-                    ->findOneBy(['productPart' => $productionSchemeStage->toArray()['product_part']['id'], 'operationType' => $productionSchemeStage->toArray()['operation_type']['id']])->getResult();
-
-                if (!empty($virtualPart)) {
-                    $virtualParts[] = array_merge($virtualPart->toArray(), ['quantity' => $prevProductionSchemeStage->getQuantity()]);
+                if (!empty($prevVirtualPart)) {
+                    $virtualParts[] = array_merge($prevVirtualPart->toArray(), ['quantity' => $prevProductionSchemeStage->getQuantity()]);
                 }
             }
         }
@@ -210,8 +214,14 @@ class ProductionSchemeService
                         ],
                     ];
 
+//                    if ((int) $nextStage->getExecutorId() === (int) $this->settings->get('b24')['SYSTEM_USER_ID']) {
+//                        $b24TaskFields['ACCOMPLICES'] = array_map(fn($user) => $user['USER_ID'], $this->CRestService->getGroupUsers($nextStageGroupId));
+//                    }
+
                     if ((int) $nextStage->getExecutorId() === (int) $this->settings->get('b24')['SYSTEM_USER_ID']) {
-                        $b24TaskFields['ACCOMPLICES'] = array_map(fn($user) => $user['USER_ID'], $this->CRestService->getGroupUsers($nextStageGroupId));
+                        $groupUsers = $this->CRestService->getGroupUsers($nextStageGroupId);
+                        $groupUsersExceptCreator = array_filter($groupUsers, fn($user) => $user['ROLE'] !== 'A');
+                        $b24TaskFields['ACCOMPLICES'] = array_map(fn($user) => $user['USER_ID'], $groupUsersExceptCreator);
                     }
 
 
